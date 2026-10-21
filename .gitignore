@@ -26,13 +26,21 @@ dist/
 .env
 .env.*
 !.env.example
+config/odoo.conf
 
 # Odoo/runtime output
 *.log
+*-setup.log
+install-addons.log
 *.pid
 *.sqlite3
 *.dump
 *.backup
+
+# Local project directories
+custom_addons/
+archive_reference/
+/demo/
 
 # Editors and operating systems
 .idea/
