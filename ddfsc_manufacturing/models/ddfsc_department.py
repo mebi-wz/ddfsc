@@ -15,6 +15,11 @@ DEPARTMENTS = {
         'finished_location': 'loc_pasta_finished',
         'fg_source': 'loc_pasta_finished',
         'fg_dest': FINISHED_GOODS_STORE,
+        # Measured, saleable breakage is kept separately from finished goods
+        # until the store team accepts it for sale.
+        'byproduct_location': 'loc_pasta_byproduct',
+        'byproduct_source': 'loc_pasta_byproduct',
+        'byproduct_dest': 'loc_store',
     },
     'bread': {
         'label': 'Bread',
@@ -25,6 +30,9 @@ DEPARTMENTS = {
         'finished_location': 'loc_bread_finished',
         'fg_source': 'loc_bread_finished',
         'fg_dest': FINISHED_GOODS_STORE,
+        'byproduct_location': 'loc_bread_byproduct',
+        'byproduct_source': 'loc_bread_byproduct',
+        'byproduct_dest': 'loc_store',
     },
     'biscuit': {
         'label': 'Biscuit',
@@ -35,6 +43,9 @@ DEPARTMENTS = {
         'finished_location': 'loc_biscuit_finished',
         'fg_source': 'loc_biscuit_finished',
         'fg_dest': FINISHED_GOODS_STORE,
+        'byproduct_location': 'loc_biscuit_byproduct',
+        'byproduct_source': 'loc_biscuit_byproduct',
+        'byproduct_dest': 'loc_store',
     },
     'flour': {
         'label': 'Flour',

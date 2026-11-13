@@ -83,5 +83,6 @@
     </record>
     <record id="action_qc_inspection_document" model="ir.actions.act_window">
         <field name="name">QC Inspections</field><field name="res_model">ddfsc.qc.inspection</field><field name="view_mode">list,form</field><field name="search_view_id" ref="qc_inspection_document_search"/>
+        <field name="domain">context.get('ddfsc_qc_lot_ids') and [('lot_id', 'in', context.get('ddfsc_qc_lot_ids'))] or []</field>
     </record>
 </odoo>
