@@ -5,4 +5,14 @@ class ProductTemplate(models.Model):
     _inherit = 'product.template'
 
     ddfsc_is_flour = fields.Boolean(string='Counts as Flour')
-    ddfsc_is_byproduct = fields.Boolean(string='Mill By-product')
+    ddfsc_is_byproduct = fields.Boolean(string='Saleable By-product')
+    ddfsc_byproduct_department = fields.Selection(
+        [
+            ('flour', 'Flour'),
+            ('pasta', 'Pasta / Macaroni'),
+            ('bread', 'Bread'),
+            ('biscuit', 'Biscuit'),
+        ],
+        string='By-product Department',
+        help='Department that produces this saleable by-product.',
+    )

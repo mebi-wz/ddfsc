@@ -13,6 +13,24 @@ class MrpProduction(models.Model):
     ddfsc_supervisor_id = fields.Many2one('res.users', string='Shift Supervisor', tracking=True)
     ddfsc_line_id = fields.Many2one('mrp.workcenter', string='Production Line', tracking=True)
     ddfsc_line_code = fields.Char(related='ddfsc_line_id.code')
+    ddfsc_department = fields.Selection(
+        selection=lambda self: [(key, value['label']) for key, value in DEPARTMENTS.items()],
+        compute='_compute_ddfsc_department', store=True, index=True,
+        string='Department',
+    )
+    ddfsc_workflow_state = fields.Selection(
+        [
+            ('draft', 'Draft'),
+            ('confirmed', 'Confirmed'),
+            ('waiting_approval', 'Waiting Approval'),
+            ('approved', 'Approved'),
+            ('done', 'Done'),
+            ('needs_changes', 'Needs Changes'),
+            ('cancel', 'Cancelled'),
+        ],
+        string='Production Workflow',
+        compute='_compute_ddfsc_workflow_state',
+    )
     ddfsc_flour_request_qtl = fields.Float(
         related='ddfsc_line_id.ddfsc_flour_request_qtl',
         string='Daily Flour Request (qtl)',
@@ -70,6 +88,31 @@ class MrpProduction(models.Model):
     )
     bread_scrap_low = fields.Float(string='Expected Scrap From (qtl)', compute='_compute_shift_figures')
     bread_scrap_high = fields.Float(string='Expected Scrap To (qtl)', compute='_compute_shift_figures')
+
+    @api.depends('ddfsc_line_id', 'ddfsc_line_id.code')
+    def _compute_ddfsc_department(self):
+        line_departments = {values['line']: key for key, values in DEPARTMENTS.items()}
+        for production in self:
+            production.ddfsc_department = line_departments.get(production.ddfsc_line_id.code, False)
+
+    @api.depends('state', 'ddfsc_approval_state')
+    def _compute_ddfsc_workflow_state(self):
+        """Present one operator-facing workflow instead of two unrelated bars."""
+        for production in self:
+            if production.state == 'cancel':
+                production.ddfsc_workflow_state = 'cancel'
+            elif production.state == 'done':
+                production.ddfsc_workflow_state = 'done'
+            elif production.ddfsc_approval_state == 'refused':
+                production.ddfsc_workflow_state = 'needs_changes'
+            elif production.ddfsc_approval_state == 'submitted':
+                production.ddfsc_workflow_state = 'waiting_approval'
+            elif production.ddfsc_approval_state == 'approved':
+                production.ddfsc_workflow_state = 'approved'
+            elif production.state in ('confirmed', 'progress', 'to_close'):
+                production.ddfsc_workflow_state = 'confirmed'
+            else:
+                production.ddfsc_workflow_state = 'draft'
 
     @api.depends(
         'product_qty',
@@ -179,11 +222,44 @@ class MrpProduction(models.Model):
     def action_view_ddfsc_quality_lots(self):
         self.ensure_one()
         lots = self.ddfsc_quality_lot_ids
+        inspection_action = self._ddfsc_quality_inspection_action(lots)
+        if inspection_action:
+            return inspection_action
         action = self.env.ref('ddfsc_manufacturing.action_ddfsc_qc_lots').read()[0]
         action['domain'] = [('id', 'in', lots.ids)]
         if len(lots) == 1:
             action.update(view_mode='form', views=[(False, 'form')], res_id=lots.id)
         return action
+
+    def _ddfsc_quality_inspection_action(self, lots):
+        """Open the standalone QC document, never the legacy lot form.
+
+        Manufacturing remains installable without ddfsc_quality, so retain a
+        false return as a compatibility fallback for that optional module.
+        """
+        if not lots or 'ddfsc.qc.inspection' not in self.env.registry.models:
+            return False
+        ensure = getattr(lots, '_ensure_qc_inspection', False)
+        if ensure:
+            ensure()
+        inspections = lots.mapped('active_qc_inspection_id').exists()
+        if not inspections:
+            return False
+        action = self.env.ref('ddfsc_quality.action_qc_inspection_document', raise_if_not_found=False)
+        if not action:
+            return False
+        values = action.read()[0]
+        values['domain'] = [('id', 'in', inspections.ids)]
+        if len(inspections) == 1:
+            values.update(view_mode='form', views=[(False, 'form')], res_id=inspections.id)
+        return values
+
+    def _ddfsc_quality_redirect_action(self):
+        """Action used by RedirectWarning's button when QC blocks an FG move."""
+        return self.env.ref(
+            'ddfsc_quality.action_qc_inspection_document',
+            raise_if_not_found=False,
+        ) or self.env.ref('ddfsc_manufacturing.action_ddfsc_qc_lots')
 
     def action_view_ddfsc_pickings(self):
         self.ensure_one()
@@ -342,19 +418,14 @@ class MrpProduction(models.Model):
             finished = production.move_finished_ids.filtered(
                 lambda move: move.state not in ('done', 'cancel')
             )
-            if production.ddfsc_line_id.code == 'MILL':
-                byproduct_loc = self.env.ref(
-                    'ddfsc_manufacturing.loc_byproduct', raise_if_not_found=False,
-                )
-                if byproduct_loc:
-                    finished.filtered('product_id.ddfsc_is_byproduct').write({
-                        'location_dest_id': byproduct_loc.id,
-                    })
-                finished.filtered(lambda move: not move.product_id.ddfsc_is_byproduct).write({
-                    'location_dest_id': destination.id,
+            byproduct_loc = production._ddfsc_byproduct_location()
+            if byproduct_loc:
+                finished.filtered('product_id.ddfsc_is_byproduct').write({
+                    'location_dest_id': byproduct_loc.id,
                 })
-            else:
-                finished.write({'location_dest_id': destination.id})
+            finished.filtered(lambda move: not move.product_id.ddfsc_is_byproduct).write({
+                'location_dest_id': destination.id,
+            })
         return super().action_confirm()
 
     def _ddfsc_remove_orphan_raw_moves(self):
@@ -374,7 +445,6 @@ class MrpProduction(models.Model):
 
     def button_mark_done(self):
         self._ddfsc_ensure_approved()
-        byproduct_loc = self.env.ref('ddfsc_manufacturing.loc_byproduct', raise_if_not_found=False)
         for production in self:
             source, destination = production._ddfsc_plant_locations()
             finished = production.move_finished_ids.filtered(
@@ -383,42 +453,117 @@ class MrpProduction(models.Model):
             if not destination:
                 continue
             production.location_dest_id = destination
-            if production.ddfsc_line_id.code == 'MILL':
-                if byproduct_loc:
-                    finished.filtered('product_id.ddfsc_is_byproduct').write({
-                        'location_dest_id': byproduct_loc.id,
-                    })
-                finished.filtered(lambda move: not move.product_id.ddfsc_is_byproduct).write({
-                    'location_dest_id': destination.id,
+            byproduct_loc = production._ddfsc_byproduct_location()
+            if byproduct_loc:
+                finished.filtered('product_id.ddfsc_is_byproduct').write({
+                    'location_dest_id': byproduct_loc.id,
                 })
-            else:
-                finished.write({'location_dest_id': destination.id})
+            finished.filtered(lambda move: not move.product_id.ddfsc_is_byproduct).write({
+                'location_dest_id': destination.id,
+            })
         res = super().button_mark_done()
         if res is True:
             self._ddfsc_post_losses()
         return res
 
+    def _ddfsc_byproduct_location(self):
+        """The department-specific holding location for saleable by-products."""
+        self.ensure_one()
+        department = self.ddfsc_department
+        if not department and self.ddfsc_line_id:
+            department = next(
+                (key for key, values in DEPARTMENTS.items()
+                 if values['line'] == self.ddfsc_line_id.code),
+                False,
+            )
+        xmlid = DEPARTMENTS.get(department, {}).get('byproduct_location')
+        return self.env.ref(
+            'ddfsc_manufacturing.%s' % xmlid, raise_if_not_found=False,
+        ) if xmlid else self.env['stock.location']
+
     def _ddfsc_post_losses(self):
         for production in self.filtered(lambda item: item.state == 'done' and not item.ddfsc_loss_posted):
             lot = production.lot_producing_ids[:1]
-            for quantity, label in ((production.scrap_qty, 'Scrap'), (production.sweeping_qty, 'Sweeping')):
-                if not quantity:
-                    continue
-                if production.product_id.tracking != 'none' and not lot:
-                    raise UserError(_('Set the finished lot before posting scrap or sweeping.'))
-                if production.ddfsc_line_id.code in ('PASTA', 'MAC'):
-                    production._ddfsc_recycle(quantity, lot, label)
-                    continue
-                scrap = self.env['stock.scrap'].create({
-                    'product_id': production.product_id.id,
-                    'scrap_qty': quantity,
-                    'product_uom_id': production.product_uom_id.id,
-                    'location_id': production.location_dest_id.id,
-                    'lot_id': lot.id if lot else False,
-                    'origin': '%s %s' % (label, production.name),
-                })
-                scrap.do_scrap()
+            # Scrap is a measured, controlled production by-product.  It is
+            # recorded under a distinct saleable product and held for store
+            # acceptance.  Sweepings remain waste: floor-contaminated material
+            # must never be made available for sale automatically.
+            if production.scrap_qty:
+                byproduct = production._ddfsc_saleable_byproduct()
+                if byproduct:
+                    production._ddfsc_post_saleable_byproduct(byproduct, production.scrap_qty)
+                else:
+                    production._ddfsc_post_scrap(production.scrap_qty, lot, 'Scrap')
+            if production.sweeping_qty:
+                production._ddfsc_post_scrap(production.sweeping_qty, lot, 'Non-saleable sweeping')
             production.ddfsc_loss_posted = True
+
+    def _ddfsc_post_scrap(self, quantity, lot, label):
+        self.ensure_one()
+        if not quantity:
+            return
+        if self.product_id.tracking != 'none' and not lot:
+            raise UserError(_('Set the finished lot before posting scrap or sweeping.'))
+        scrap = self.env['stock.scrap'].create({
+            'product_id': self.product_id.id,
+            'scrap_qty': quantity,
+            'product_uom_id': self.product_uom_id.id,
+            'location_id': self.location_dest_id.id,
+            'lot_id': lot.id if lot else False,
+            'origin': '%s %s' % (label, self.name),
+        })
+        scrap.do_scrap()
+
+    def _ddfsc_saleable_byproduct(self):
+        self.ensure_one()
+        mapping = {
+            'PASTA': 'product_pasta_breakage',
+            'MAC': 'product_pasta_breakage',
+            'BREAD': 'product_bread_breakage',
+            'BISC-CN': 'product_biscuit_breakage',
+            'BISC-OR': 'product_biscuit_breakage',
+        }
+        xmlid = mapping.get(self.ddfsc_line_id.code)
+        if not xmlid:
+            return self.env['product.product']
+        template = self.env.ref('ddfsc_manufacturing.%s' % xmlid, raise_if_not_found=False)
+        return template.product_variant_id if template else self.env['product.product']
+
+    def _ddfsc_post_saleable_byproduct(self, product, quantity):
+        """Create traceable stock of a named by-product from this MO."""
+        self.ensure_one()
+        destination = DEPARTMENTS.get(self.ddfsc_department, {}).get('byproduct_location')
+        location_dest = self.env.ref(
+            'ddfsc_manufacturing.%s' % destination, raise_if_not_found=False,
+        ) if destination else self.env['stock.location']
+        if not location_dest:
+            raise UserError(_('No saleable by-product location is configured for this department.'))
+        # Odoo's virtual Production location is company-specific in this
+        # database, so it may not have a portable XML id.
+        production_location = self.env['stock.location'].search([
+            ('usage', '=', 'production'),
+            ('company_id', 'in', [self.company_id.id, False]),
+        ], limit=1)
+        if not production_location:
+            raise UserError(_('No virtual Production location is configured for this company.'))
+        move = self.env['stock.move'].create({
+            'product_id': product.id,
+            'product_uom_qty': quantity,
+            'product_uom': product.uom_id.id,
+            'location_id': production_location.id,
+            'location_dest_id': location_dest.id,
+            'origin': self.name,
+            'company_id': self.company_id.id,
+            'picked': True,
+            'move_line_ids': [Command.create({
+                'product_id': product.id,
+                'product_uom_id': product.uom_id.id,
+                'quantity': quantity,
+                'location_id': production_location.id,
+                'location_dest_id': location_dest.id,
+            })],
+        })
+        move._action_done()
 
     def _ddfsc_recycle(self, quantity, lot, label):
         self.ensure_one()

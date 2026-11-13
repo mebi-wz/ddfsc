@@ -239,14 +239,44 @@ class DdfscShift(models.Model):
             'location_id': parent.id,
             'usage': 'internal',
         })
+        self._ensure_record('loc_pasta_byproduct', 'stock.location', {
+            'name': 'Pasta By-products Temp',
+            'location_id': parent.id,
+            'usage': 'internal',
+        })
+        self._ensure_record('loc_bread_byproduct', 'stock.location', {
+            'name': 'Bread By-products Temp',
+            'location_id': parent.id,
+            'usage': 'internal',
+        })
+        self._ensure_record('loc_biscuit_byproduct', 'stock.location', {
+            'name': 'Biscuit By-products Temp',
+            'location_id': parent.id,
+            'usage': 'internal',
+        })
         self._ensure_product('product_flour_scp', 'Short Cut Pasta Flour', quintal)
         self._ensure_product('product_flour_lcp', 'Long Cut Pasta Flour', quintal)
         self._ensure_product('product_rf', 'By-product RF', quintal)
         self._ensure_product('product_rc', 'By-product RC', quintal)
+        self._ensure_product('product_pasta_breakage', 'Pasta Breakage (Saleable)', unit)
+        self._ensure_product('product_bread_breakage', 'Bread Breakage (Saleable)', unit)
+        self._ensure_product('product_biscuit_breakage', 'Biscuit Breakage (Saleable)', unit)
         self.env.ref('ddfsc_manufacturing.product_flour_scp').ddfsc_is_flour = True
         self.env.ref('ddfsc_manufacturing.product_flour_lcp').ddfsc_is_flour = True
-        self.env.ref('ddfsc_manufacturing.product_rf').ddfsc_is_byproduct = True
-        self.env.ref('ddfsc_manufacturing.product_rc').ddfsc_is_byproduct = True
+        byproducts = {
+            'product_rf': 'flour',
+            'product_rc': 'flour',
+            'product_pasta_breakage': 'pasta',
+            'product_bread_breakage': 'bread',
+            'product_biscuit_breakage': 'biscuit',
+        }
+        for xmlid, department in byproducts.items():
+            self.env.ref('ddfsc_manufacturing.%s' % xmlid).write({
+                'ddfsc_is_byproduct': True,
+                'ddfsc_byproduct_department': department,
+                'sale_ok': True,
+                'purchase_ok': False,
+            })
         self._ensure_product('product_defense', 'Defense Biscuit 160x4', unit)
         self._ensure_product('product_carton_160', 'Carton 160x4', unit)
         self._ensure_product('product_defense_film', 'Defense Film', kg)
