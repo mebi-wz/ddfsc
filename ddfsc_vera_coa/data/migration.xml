@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <function model="account.analytic.account" name="_ddfsc_share_product_line_dimension"/>
+    <function model="account.move.line" name="_ddfsc_migrate_vera_draft_lines"/>
+</odoo>

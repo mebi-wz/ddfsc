@@ -22,6 +22,22 @@ class ProductTemplate(models.Model):
         default=0.0,
         help="Wholesale selling price for this product.",
     )
+    product_plan_id = fields.Many2one(
+        'account.analytic.plan',
+        string='Product Analytic Plan',
+        compute='_compute_product_plan_id',
+    )
+    analytic_account_id = fields.Many2one(
+        'account.analytic.account',
+        string='Analytic Account',
+        domain="['|', ('company_id', '=', False), ('company_id', '=?', company_id), ('plan_id', '=?', product_plan_id)]",
+        help="Analytic account representing this product or product line dimension (e.g. Wheat Flour, Macaroni, Biscuit, etc.).",
+    )
+
+    def _compute_product_plan_id(self):
+        plan = self.env.company.get_product_analytic_plan()
+        for tmpl in self:
+            tmpl.product_plan_id = plan
 
     def _get_single_tax_amount_and_type(self, price):
         currency = self.currency_id

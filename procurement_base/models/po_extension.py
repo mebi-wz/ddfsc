@@ -58,6 +58,12 @@ class PurchaseOrder(models.Model):
             res['scheduled_date'] = self.date_planned
         return res
 
+    def _prepare_invoice(self):
+        invoice_vals = super()._prepare_invoice()
+        if self.picking_type_id and self.picking_type_id.warehouse_id:
+            invoice_vals['warehouse_id'] = self.picking_type_id.warehouse_id.id
+        return invoice_vals
+
     def _create_picking(self):
         res = super()._create_picking()
         if self.company_id.set_po_date_as_receipt_date and self.date_planned:

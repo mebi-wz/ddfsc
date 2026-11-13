@@ -1,6 +1,28 @@
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 
+
+def _analytic_for_company(env, analytic, company):
+    """Return the equivalent analytic value for the target company."""
+    if not analytic:
+        return env['account.analytic.account']
+    analytic = analytic.sudo()
+    if not analytic.company_id or analytic.company_id == company:
+        return analytic
+    counterpart = env['account.analytic.account'].sudo().with_context(active_test=False).search([
+        ('code', '=', analytic.code),
+        ('plan_id', '=', analytic.plan_id.id),
+        ('company_id', '=', company.id),
+    ], limit=1)
+    if not counterpart:
+        raise UserError(_(
+            "Analytic value %(analytic)s belongs to %(source)s and has no matching value for %(target)s.",
+            analytic=analytic.display_name,
+            source=analytic.company_id.display_name,
+            target=company.display_name,
+        ))
+    return counterpart
+
 class PurchasePortLoading(models.Model):
     _name = 'purchase.port.loading'
     _description = 'Port of Loading'
@@ -355,8 +377,25 @@ class ForeignRFQ(models.Model):
         if self.state != 'approved':
             raise UserError(_("RFQ must be in 'Currency Approved' state to create a Purchase Order."))
 
+        order_lines = []
+        for line in self.line_ids:
+            source_analytic = line.sudo().cost_center_id
+            analytic = _analytic_for_company(self.env, source_analytic, self.company_id)
+            if source_analytic and analytic != source_analytic:
+                line.sudo().write({'cost_center_id': analytic.id})
+            order_lines.append((0, 0, {
+                'product_id': line.product_id.id,
+                'name': line.product_id.display_name,
+                'product_description': line.description,
+                'line_no': line.line_no,
+                'product_qty': line.quantity,
+                'price_unit': line.price_unit_etb,
+                'price_unit_usd': line.price_unit,
+                'date_planned': fields.Datetime.now(),
+                'product_uom_id': line.uom_id.id if line.uom_id else line.product_id.uom_id.id,
+                'analytic_distribution': {str(analytic.id): 100} if analytic else False,
+            }))
 
-        
         po_vals = {
             'partner_id': self.vendor_id.id,
             'origin': self.name,
@@ -366,28 +405,15 @@ class ForeignRFQ(models.Model):
             'date_order': fields.Datetime.now(),
             'currency_id': self.currency_id.id,
             'exchange_rate': self.exchange_rate,
-            'order_line': [
-                (0, 0, {
-                    'product_id': line.product_id.id,
-                    'name': line.product_id.display_name,
-                    'product_description': line.description,
-                    'line_no': line.line_no,
-                    'product_qty': line.quantity,
-                    'price_unit': line.price_unit_etb,
-                    'price_unit_usd': line.price_unit,
-                    'date_planned': fields.Datetime.now(),
-                    'product_uom_id': line.uom_id.id if line.uom_id else line.product_id.uom_id.id,
-                    'analytic_distribution': {str(line.cost_center_id.id): 100} if line.cost_center_id else False,
-                })
-
-                for line in self.line_ids
-            ],
+            'order_line': order_lines,
             'company_id': self.company_id.id,
         }
 
 
 
-        po = self.env['purchase.order'].create(po_vals)
+        po = self.env['purchase.order'].with_company(self.company_id).with_context(
+            allowed_company_ids=[self.company_id.id]
+        ).create(po_vals)
         self.write({'state': 'po_created', 'purchase_order_id': po.id})
 
         return {

@@ -37,4 +37,14 @@ class ResConfigSettings(models.TransientModel):
         readonly=False,
         string="Default Analysis Period",
     )
+    branch_analytic_plan_id = fields.Many2one(
+        related='company_id.branch_analytic_plan_id',
+        readonly=False,
+        string="Branch Analytic Plan",
+    )
+    product_analytic_plan_id = fields.Many2one(
+        related='company_id.product_analytic_plan_id',
+        readonly=False,
+        string="Product Analytic Plan",
+    )
 

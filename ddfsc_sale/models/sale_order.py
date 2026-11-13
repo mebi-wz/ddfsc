@@ -1,6 +1,7 @@
 from markupsafe import Markup
 from odoo import api, fields, models, _
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
+from odoo.addons.ddfsc_product.models.res_company import merge_analytic_distribution
 
 
 class SaleOrder(models.Model):
@@ -66,13 +67,25 @@ class SaleOrder(models.Model):
         tracking=True,
         help="Reason provided by the manager when rejecting this order.",
     )
+    branch_plan_id = fields.Many2one(
+        'account.analytic.plan',
+        string='Branch Plan',
+        compute='_compute_branch_plan_id',
+    )
     analytic_account_id = fields.Many2one(
         'account.analytic.account',
-        string='Location',
+        string='Branch',
+        domain="['|', ('company_id', '=', False), ('company_id', '=', company_id), ('plan_id', '=?', branch_plan_id)]",
         check_company=True,
         copy=False,
-        help="Location / Branch cost center for this order.",
+        help="Branch cost center / analytic account for this order.",
     )
+
+    @api.depends('company_id')
+    def _compute_branch_plan_id(self):
+        for order in self:
+            company = order.company_id or self.env.company
+            order.branch_plan_id = company.get_branch_analytic_plan()
     payment_proof = fields.Binary(
         string='Payment Proof / Receipt',
         attachment=True,
@@ -213,10 +226,28 @@ class SaleOrder(models.Model):
         wh_tax = self.company_id.sale_withholding_tax_id
         if not wh_tax:
             wh_tax = self.env['account.tax'].search([
-                ('name', '=', '3% WH'),
+                ('name', '=', '2% WH'),
                 ('type_tax_use', '=', 'sale'),
+                ('company_id', '=', self.company_id.id),
             ], limit=1)
         return wh_tax
+
+    def _should_apply_automatic_withholding_tax(self):
+        self.ensure_one()
+        company = self.company_id or self.env.company
+        threshold = company.sale_withholding_tax_threshold or 0.0
+        return bool(
+            company.enable_sale_withholding_tax
+            and self._get_or_create_withholding_tax()
+            and self.amount_untaxed >= threshold
+        )
+
+    def _sync_automatic_withholding_tax(self):
+        for order in self:
+            should_apply = order._should_apply_automatic_withholding_tax()
+            if order.apply_withholding_tax != should_apply:
+                order.apply_withholding_tax = should_apply
+            order._update_withholding_taxes_on_lines()
 
     def _update_withholding_taxes_on_lines(self):
         for order in self:
@@ -241,21 +272,7 @@ class SaleOrder(models.Model):
 
     @api.onchange('order_line')
     def _onchange_order_line_withholding_tax(self):
-        wh_tax = self._get_or_create_withholding_tax()
-        if not wh_tax:
-            return
-        wh_tax_id = wh_tax.id
-        regular_lines = self.order_line.filtered(lambda l: not l.display_type and not l.is_downpayment)
-        has_any_wh = any(
-            any((t._origin.id or t.id) == wh_tax_id for t in line.tax_ids)
-            for line in regular_lines
-        )
-        # If withholding tax was cancelled using 'x' in the Taxes column on all lines, turn OFF the button
-        if not has_any_wh and self.apply_withholding_tax:
-            self.apply_withholding_tax = False
-        # If user manually selected withholding tax on a line, turn ON the button
-        elif has_any_wh and not self.apply_withholding_tax:
-            self.apply_withholding_tax = True
+        self._sync_automatic_withholding_tax()
 
     @api.onchange('apply_order_discount')
     def _onchange_apply_order_discount(self):
@@ -265,15 +282,8 @@ class SaleOrder(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         orders = super().create(vals_list)
-        for order in orders:
-            wh_tax = order._get_or_create_withholding_tax()
-            if wh_tax:
-                regular_lines = order.order_line.filtered(lambda l: not l.display_type and not l.is_downpayment)
-                has_any_wh = any(wh_tax in line.tax_ids for line in regular_lines)
-                if order.apply_withholding_tax and not has_any_wh and order.order_line:
-                    order._update_withholding_taxes_on_lines()
-                elif not order.apply_withholding_tax and has_any_wh:
-                    order.apply_withholding_tax = True
+        if not self.env.context.get('skip_automatic_withholding_sync'):
+            orders._sync_automatic_withholding_tax()
         return orders
 
     def write(self, vals):
@@ -281,19 +291,10 @@ class SaleOrder(models.Model):
         if 'apply_order_discount' in vals or 'order_discount_percent' in vals:
             for order in self:
                 order._apply_global_discount()
-        # If user explicitly changed the withholding tax toggle in the header
-        if 'apply_withholding_tax' in vals and 'order_line' not in vals:
-            for order in self:
-                order._update_withholding_taxes_on_lines()
-        # If lines changed without explicit toggle change, sync toggle to match lines
-        elif 'order_line' in vals and 'apply_withholding_tax' not in vals:
-            for order in self:
-                wh_tax = order._get_or_create_withholding_tax()
-                if wh_tax:
-                    regular_lines = order.order_line.filtered(lambda l: not l.display_type and not l.is_downpayment)
-                    has_any_wh = any(wh_tax in line.tax_ids for line in regular_lines)
-                    if order.apply_withholding_tax != has_any_wh:
-                        order.apply_withholding_tax = has_any_wh
+        if not self.env.context.get('skip_automatic_withholding_sync') and (
+            'order_line' in vals or 'company_id' in vals
+        ):
+            self.with_context(skip_automatic_withholding_sync=True)._sync_automatic_withholding_tax()
         return res
 
     def _get_or_create_discount_product(self):
@@ -448,12 +449,6 @@ class SaleOrder(models.Model):
                     raise UserError(_(
                         "Customer '%s' has a BLOCKED credit status. Credit sales cannot be approved."
                     ) % partner.name)
-            elif order.sale_type == 'cash':
-                if not order.payment_proof and not order.payment_note:
-                    raise UserError(_(
-                        "For Cash Sales, please provide Payment Proof / Receipt or Payment Note / Reference before approving."
-                    ))
-
             now = fields.Datetime.now()
             vals = {
                 'quotation_approver_id': self.env.user.id,
@@ -543,9 +538,6 @@ class SaleOrder(models.Model):
                 order._apply_global_discount()
             if order.sale_type == 'credit' and order.partner_id and getattr(order.partner_id, 'credit_status', False) == 'blocked':
                 raise UserError(_("Customer '%s' has a BLOCKED credit status. Credit sales cannot be confirmed.") % order.partner_id.name)
-            if order.sale_type == 'cash' and not order.payment_proof and not order.payment_note:
-                raise UserError(_("For Cash Sales, please provide Payment Proof / Receipt or Payment Note / Reference before confirming."))
-
             # If salesperson tries to confirm directly in draft or sent
             if not order.is_sales_approver and order.state in ('draft', 'sent'):
                 raise UserError(_(
@@ -559,13 +551,10 @@ class SaleOrder(models.Model):
 
     def _prepare_invoice(self):
         invoice_vals = super()._prepare_invoice()
-        if self.payment_proof:
-            invoice_vals['payment_proof'] = self.payment_proof
-            invoice_vals['payment_proof_filename'] = self.payment_proof_filename
-        if self.payment_note:
-            invoice_vals['payment_note'] = self.payment_note
         if hasattr(self, 'sale_type') and self.sale_type:
             invoice_vals['sale_type'] = self.sale_type
+        if self.warehouse_id:
+            invoice_vals['warehouse_id'] = self.warehouse_id.id
 
         # Option B: Add the discount line to invoice lines so invoice balances
         if self.apply_order_discount and self.order_discount_percent > 0:
@@ -599,16 +588,60 @@ class SaleOrder(models.Model):
     @api.model
     def default_get(self, fields_list):
         res = super().default_get(fields_list)
-        if 'warehouse_id' in fields_list and not res.get('warehouse_id'):
-            if self.env.user.default_warehouse_id:
-                res['warehouse_id'] = self.env.user.default_warehouse_id.id
-            elif self.env.user.allowed_warehouse_ids:
-                res['warehouse_id'] = self.env.user.allowed_warehouse_ids[0].id
+        company_id = res.get('company_id') or self.env.context.get('default_company_id') or self.env.company.id
+
+        if 'warehouse_id' in fields_list:
+            wh_id = res.get('warehouse_id')
+            if wh_id:
+                wh = self.env['stock.warehouse'].browse(wh_id)
+                if wh.company_id.id != company_id:
+                    res['warehouse_id'] = False
+
+            if not res.get('warehouse_id'):
+                user_wh = self.env.user.default_warehouse_id
+                if user_wh and user_wh.company_id.id == company_id:
+                    res['warehouse_id'] = user_wh.id
+                else:
+                    comp_whs = self.env.user.allowed_warehouse_ids.filtered(lambda w: w.company_id.id == company_id)
+                    if comp_whs:
+                        res['warehouse_id'] = comp_whs[0].id
+                    else:
+                        wh_found = self.env['stock.warehouse'].search([('company_id', '=', company_id)], limit=1)
+                        res['warehouse_id'] = wh_found.id if wh_found else False
+
         if res.get('warehouse_id') and 'analytic_account_id' in fields_list and not res.get('analytic_account_id'):
             warehouse = self.env['stock.warehouse'].browse(res['warehouse_id'])
             if warehouse.analytic_account_id:
-                res['analytic_account_id'] = warehouse.analytic_account_id.id
+                if not warehouse.analytic_account_id.company_id or warehouse.analytic_account_id.company_id.id == company_id:
+                    res['analytic_account_id'] = warehouse.analytic_account_id.id
+                else:
+                    res['warehouse_id'] = False
+            else:
+                res['warehouse_id'] = False
         return res
+
+    @api.onchange('company_id')
+    def _onchange_company_id_update_warehouse_and_branch(self):
+        if self.company_id:
+            if self.warehouse_id and self.warehouse_id.company_id != self.company_id:
+                self.warehouse_id = False
+            if self.analytic_account_id and self.analytic_account_id.company_id and self.analytic_account_id.company_id != self.company_id:
+                self.analytic_account_id = False
+
+    @api.constrains('warehouse_id', 'analytic_account_id')
+    def _check_warehouse_branch(self):
+        for order in self:
+            if order.warehouse_id:
+                if not order.analytic_account_id:
+                    raise ValidationError(_("Please select a Branch before selecting a Warehouse."))
+                if order.warehouse_id.analytic_account_id and order.warehouse_id.analytic_account_id != order.analytic_account_id:
+                    raise ValidationError(_(
+                        "The selected warehouse '%(warehouse)s' belongs to branch '%(wh_branch)s', "
+                        "but the order branch is '%(order_branch)s'. Please select a warehouse belonging to the selected branch.",
+                        warehouse=order.warehouse_id.display_name,
+                        wh_branch=order.warehouse_id.analytic_account_id.display_name,
+                        order_branch=order.analytic_account_id.display_name,
+                    ))
 
     @api.onchange('analytic_account_id')
     def _onchange_analytic_account_id(self):
@@ -624,12 +657,22 @@ class SaleOrder(models.Model):
             elif not warehouses:
                 self.warehouse_id = False
 
-            acc_str = str(self.analytic_account_id.id)
             for line in self.order_line:
                 if not line.display_type:
-                    line.analytic_distribution = {acc_str: 100.0}
+                    line.analytic_distribution = merge_analytic_distribution(
+                        line.analytic_distribution,
+                        self.analytic_account_id,
+                        plan=self.branch_plan_id
+                    )
         else:
             self.warehouse_id = False
+            for line in self.order_line:
+                if not line.display_type:
+                    line.analytic_distribution = merge_analytic_distribution(
+                        line.analytic_distribution,
+                        plan=self.branch_plan_id,
+                        remove_plan=True
+                    )
 
     @api.onchange('warehouse_id')
     def _onchange_warehouse_id_analytic(self):
@@ -682,12 +725,34 @@ class SaleOrderLine(models.Model):
 
     @api.onchange('product_id')
     def _onchange_product_id_set_analytic(self):
-        if self.order_id.analytic_account_id and not self.analytic_distribution:
-            self.analytic_distribution = {str(self.order_id.analytic_account_id.id): 100.0}
+        dist = self.analytic_distribution or {}
+        if self.order_id.analytic_account_id:
+            dist = merge_analytic_distribution(dist, self.order_id.analytic_account_id, plan=self.order_id.branch_plan_id)
+        if self.product_id and self.product_id.analytic_account_id:
+            dist = merge_analytic_distribution(dist, self.product_id.analytic_account_id)
+        self.analytic_distribution = dist
         if self.order_id.apply_withholding_tax:
             wh_tax = self.order_id._get_or_create_withholding_tax()
             if wh_tax and wh_tax not in self.tax_ids:
                 self.tax_ids = self.tax_ids | wh_tax
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if not vals.get('display_type'):
+                order_id = vals.get('order_id')
+                product_id = vals.get('product_id')
+                if order_id or product_id:
+                    order = self.env['sale.order'].browse(order_id) if order_id else False
+                    product = self.env['product.product'].browse(product_id) if product_id else False
+                    dist = vals.get('analytic_distribution') or {}
+                    if order and order.analytic_account_id:
+                        dist = merge_analytic_distribution(dist, order.analytic_account_id, plan=order.branch_plan_id)
+                    if product and product.analytic_account_id:
+                        dist = merge_analytic_distribution(dist, product.analytic_account_id)
+                    if dist:
+                        vals['analytic_distribution'] = dist
+        return super().create(vals_list)
 
     def _get_display_price_ignore_combo(self):
         self.ensure_one()

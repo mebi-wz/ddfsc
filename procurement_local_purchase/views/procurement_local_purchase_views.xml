@@ -79,7 +79,11 @@
                         <group>
                             <field name="requested_by" readonly="state not in ['draft', 'submitted']"/>
                             <field name="department_id" readonly="state != 'draft'"/>
-                            <field name="cost_center_id" readonly="state != 'draft'"/>
+                            <field name="cost_center_plan_id" invisible="1"/>
+                            <field name="cost_center_id"
+                                   domain="['|', ('company_id', '=', False), ('company_id', '=', company_id), ('plan_id', '=?', cost_center_plan_id)]"
+                                   options="{'no_create': True}"
+                                   readonly="state != 'draft'"/>
                             <field name="purchase_type" invisible="1"/>
                             <field name="amount_total" invisible="1"/>
                             <field name="store_requisition_id" readonly="1" invisible="store_requisition_id == 0" string="Store Requisition"/>
@@ -103,7 +107,13 @@
                                     <field name="description" readonly="state != 'draft'"/>
                                     <field name="product_uom_id" readonly="state != 'draft'"/>
                                     <field name="quantity" readonly="state != 'draft'"/>
-                                    <field name="cost_center_id" readonly="state != 'draft'" optional="show"/>
+                                    <field name="company_id" column_invisible="True"/>
+                                    <field name="cost_center_plan_id" column_invisible="True"/>
+                                    <field name="cost_center_id"
+                                           domain="['|', ('company_id', '=', False), ('company_id', '=', company_id), ('plan_id', '=?', cost_center_plan_id)]"
+                                           options="{'no_create': True}"
+                                           readonly="state != 'draft'"
+                                           optional="show"/>
                                     <field name="account_id" column_invisible="True"/>
                                     <field name="unit_price" readonly="state != 'draft'"/>
                                     <field name="total_price" readonly="state != 'draft'"/>

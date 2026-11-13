@@ -34,12 +34,25 @@ class ForeignPurchaseRequisition(models.Model):
         store=True,
         tracking=True
     )
+    cost_center_plan_id = fields.Many2one(
+        'account.analytic.plan',
+        string='Cost Center Plan',
+        compute='_compute_cost_center_plan_id',
+    )
     cost_center_id = fields.Many2one(
         'account.analytic.account',
         string='Cost Center',
+        domain="['|', ('company_id', '=', False), ('company_id', '=', company_id), ('plan_id', '=?', cost_center_plan_id)]",
+        check_company=True,
         store=True,
         tracking=True
     )
+
+    @api.depends('company_id')
+    def _compute_cost_center_plan_id(self):
+        for req in self:
+            company = req.company_id or self.env.company
+            req.cost_center_plan_id = company.get_cost_center_analytic_plan()
     purpose = fields.Selection(
         [
             ('refill','Refill'),
@@ -420,10 +433,23 @@ class ForeignPurchaseRequisitionLine(models.Model):
                 line.account_id = line.product_id.property_account_expense_id or line.product_id.categ_id.property_account_expense_categ_id
             else:
                 line.account_id = False
+    cost_center_plan_id = fields.Many2one(
+        'account.analytic.plan',
+        string='Cost Center Plan',
+        related='requisition_id.cost_center_plan_id',
+    )
+    company_id = fields.Many2one(
+        'res.company',
+        string='Company',
+        related='requisition_id.company_id',
+        store=True,
+    )
     cost_center_id = fields.Many2one(
         'account.analytic.account',
         string='Cost Center',
         related='requisition_id.cost_center_id',
+        domain="['|', ('company_id', '=', False), ('company_id', '=', company_id), ('plan_id', '=?', cost_center_plan_id)]",
+        check_company=True,
         store=False
     )
     budget_category_id = fields.Many2one(

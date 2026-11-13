@@ -11,3 +11,6 @@ from . import stock_move_line
 
 from . import main_warehouse_stock
 from . import stock_picking
+from . import res_company
+from . import res_config_settings
+

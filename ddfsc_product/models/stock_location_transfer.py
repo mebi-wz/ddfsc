@@ -70,12 +70,19 @@ class StockLocationTransfer(models.Model):
         copy=False
     )
 
+    branch_plan_id = fields.Many2one(
+        'account.analytic.plan',
+        string='Branch Plan',
+        compute='_compute_branch_plan_id',
+    )
+
     # -------------------------------------------------------------
     # Source (From)
     # -------------------------------------------------------------
     source_analytic_account_id = fields.Many2one(
         'account.analytic.account',
-        string='Source Analytic Account',
+        string='Source Branch / Analytic Account',
+        domain="[('plan_id', '=?', branch_plan_id)]",
         required=True,
         check_company=True,
         tracking=True,
@@ -102,7 +109,8 @@ class StockLocationTransfer(models.Model):
     # -------------------------------------------------------------
     dest_analytic_account_id = fields.Many2one(
         'account.analytic.account',
-        string='Destination Analytic Account',
+        string='Destination Branch / Analytic Account',
+        domain="[('plan_id', '=?', branch_plan_id)]",
         required=True,
         check_company=True,
         tracking=True,
@@ -177,6 +185,11 @@ class StockLocationTransfer(models.Model):
     # -------------------------------------------------------------
     # Computes & Onchanges
     # -------------------------------------------------------------
+    def _compute_branch_plan_id(self):
+        plan = self.env.company.get_branch_analytic_plan()
+        for rec in self:
+            rec.branch_plan_id = plan
+
     @api.depends('source_warehouse_id', 'dest_warehouse_id')
     def _compute_locations(self):
         for rec in self:

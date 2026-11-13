@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_inherit_ddfsc_stock" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.ddfsc.stock</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority" eval="25"/>
+        <field name="inherit_id" ref="stock.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@name='warehouse_setting_container']" position="after">
+                <block id="stock_analytic_dimensions_container" string="Analytic Dimensions (Branch, Product &amp; Cost Center)">
+                    <setting id="stock_analytic_dimensions_setting"
+                             string="Analytic Dimension Plans"
+                             help="Configure the Analytic Plans used as Branch/Location, Product Line, and Cost Center dimensions across Warehouse, Product, and Procurement operations.">
+                        <div class="content-group">
+                            <div class="row mt16">
+                                <label for="branch_analytic_plan_id" class="col-lg-5 o_light_label" string="Branch / Location Plan"/>
+                                <field name="branch_analytic_plan_id" class="oe_inline" options="{'no_create': True}" style="max-width: 250px;"/>
+                            </div>
+                            <div class="row mt8">
+                                <label for="product_analytic_plan_id" class="col-lg-5 o_light_label" string="Product Line Plan"/>
+                                <field name="product_analytic_plan_id" class="oe_inline" options="{'no_create': True}" style="max-width: 250px;"/>
+                            </div>
+                            <div class="row mt8">
+                                <label for="cost_center_analytic_plan_id" class="col-lg-5 o_light_label" string="Cost Center Plan"/>
+                                <field name="cost_center_analytic_plan_id" class="oe_inline" options="{'no_create': True}" style="max-width: 250px;"/>
+                            </div>
+                        </div>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

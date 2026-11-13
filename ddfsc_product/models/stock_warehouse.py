@@ -10,12 +10,23 @@ class StockWarehouse(models.Model):
         default=False,
         help="Designate this warehouse as the central/main warehouse. Its inventory will be visible (view-only) to all branch and shop users.",
     )
+    branch_plan_id = fields.Many2one(
+        'account.analytic.plan',
+        string='Branch Plan',
+        compute='_compute_branch_plan_id',
+    )
     analytic_account_id = fields.Many2one(
         'account.analytic.account',
-        string='Analytic Account',
+        string='Branch',
+        domain="['|', ('company_id', '=', False), ('company_id', '=', company_id), ('plan_id', '=?', branch_plan_id)]",
         check_company=True,
-        help="Analytic Account / Cost Center tied to this warehouse for financial reporting and branch analytics.",
+        help="Branch / Analytic Account linked to this warehouse.",
     )
+
+    def _compute_branch_plan_id(self):
+        plan = self.env.company.get_branch_analytic_plan()
+        for wh in self:
+            wh.branch_plan_id = plan
 
     def _get_sequence_values(self, name=False, code=False):
         vals = super()._get_sequence_values(name=name, code=code)

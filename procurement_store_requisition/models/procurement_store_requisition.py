@@ -70,12 +70,25 @@ class StoreRequisition(models.Model):
         store=True,
         tracking=True
     )
+    cost_center_plan_id = fields.Many2one(
+        'account.analytic.plan',
+        string='Cost Center Plan',
+        compute='_compute_cost_center_plan_id',
+    )
     cost_center_id = fields.Many2one(
-            'account.analytic.account',
-            string='Cost Center',
-            store=True,
-            tracking=True
-        )
+        'account.analytic.account',
+        string='Cost Center',
+        domain="['|', ('company_id', '=', False), ('company_id', '=', company_id), ('plan_id', '=?', cost_center_plan_id)]",
+        check_company=True,
+        store=True,
+        tracking=True
+    )
+
+    @api.depends('company_id')
+    def _compute_cost_center_plan_id(self):
+        for req in self:
+            company = req.company_id or self.env.company
+            req.cost_center_plan_id = company.get_cost_center_analytic_plan()
     is_requester = fields.Boolean(compute='_compute_is_requester')
     # approval_request_id = fields.Many2one('approval.request', string="Approval Request")
     
@@ -565,7 +578,25 @@ class StoreRequisitionLine(models.Model):
     )
     unit_price = fields.Float(string='Unit Price')
     total_price = fields.Float(string='Total Price', compute='_compute_total_price', store=True)
-    cost_center_id = fields.Many2one('account.analytic.account', string='Cost Center',related='requisition_id.cost_center_id',store=True)
+    cost_center_plan_id = fields.Many2one(
+        'account.analytic.plan',
+        string='Cost Center Plan',
+        related='requisition_id.cost_center_plan_id',
+    )
+    company_id = fields.Many2one(
+        'res.company',
+        string='Company',
+        related='requisition_id.company_id',
+        store=True,
+    )
+    cost_center_id = fields.Many2one(
+        'account.analytic.account',
+        string='Cost Center',
+        related='requisition_id.cost_center_id',
+        domain="['|', ('company_id', '=', False), ('company_id', '=', company_id), ('plan_id', '=?', cost_center_plan_id)]",
+        check_company=True,
+        store=True,
+    )
     budget_category_id = fields.Many2one(
         'account.budget.post', 
         string='Budgetary Position',

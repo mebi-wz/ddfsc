@@ -15,7 +15,7 @@ class ResCompany(models.Model):
         string="Withholding Tax",
         domain=[('type_tax_use', '=', 'sale')],
         default=lambda self: self._default_sale_withholding_tax_id(),
-        help="Tax record used for sales withholding tax deduction (e.g. 3% WH).",
+        help="Tax record used for sales withholding tax deduction (e.g. 2% WH).",
     )
     sale_withholding_tax_threshold = fields.Float(
         string="Withholding Tax Threshold",
@@ -52,7 +52,7 @@ class ResCompany(models.Model):
     @api.model
     def _default_sale_withholding_tax_id(self):
         return self.env['account.tax'].search([
-            ('name', '=', '3% WH'),
+            ('name', '=', '2% WH'),
             ('type_tax_use', '=', 'sale'),
         ], limit=1)
 

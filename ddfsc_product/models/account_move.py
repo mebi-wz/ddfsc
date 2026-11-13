@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import api, fields, models
+from .res_company import merge_analytic_distribution
 
 
 class AccountMove(models.Model):
@@ -15,21 +16,32 @@ class AccountMove(models.Model):
 
     @api.onchange('warehouse_id')
     def _onchange_warehouse_id_analytics(self):
-        if self.warehouse_id and self.warehouse_id.analytic_account_id:
-            account_id_str = str(self.warehouse_id.analytic_account_id.id)
-            for line in self.invoice_line_ids:
-                if not line.display_type or line.display_type == 'product':
-                    line.analytic_distribution = {account_id_str: 100.0}
+        branch_account = self.warehouse_id.analytic_account_id if self.warehouse_id else False
+        branch_plan = self.company_id.get_branch_analytic_plan()
+        for line in self.invoice_line_ids:
+            if not line.display_type or line.display_type == 'product':
+                line.analytic_distribution = merge_analytic_distribution(
+                    line.analytic_distribution,
+                    branch_account,
+                    plan=branch_plan,
+                    remove_plan=not bool(branch_account),
+                )
 
     @api.model_create_multi
     def create(self, vals_list):
         moves = super().create(vals_list)
         for move in moves:
-            if move.warehouse_id and move.warehouse_id.analytic_account_id:
-                account_id_str = str(move.warehouse_id.analytic_account_id.id)
-                for line in move.invoice_line_ids:
-                    if (not line.display_type or line.display_type == 'product') and not line.analytic_distribution:
-                        line.analytic_distribution = {account_id_str: 100.0}
+            branch_account = move.warehouse_id.analytic_account_id if move.warehouse_id else False
+            branch_plan = move.company_id.get_branch_analytic_plan()
+            for line in move.invoice_line_ids:
+                if not line.display_type or line.display_type == 'product':
+                    dist = line.analytic_distribution or {}
+                    if branch_account:
+                        dist = merge_analytic_distribution(dist, branch_account, plan=branch_plan)
+                    if line.product_id and line.product_id.analytic_account_id:
+                        dist = merge_analytic_distribution(dist, line.product_id.analytic_account_id)
+                    if dist:
+                        line.analytic_distribution = dist
         return moves
 
     @api.onchange('partner_id')
@@ -44,9 +56,13 @@ class AccountMoveLine(models.Model):
 
     @api.onchange('product_id')
     def _onchange_product_id_warehouse_analytics(self):
-        if self.move_id.warehouse_id and self.move_id.warehouse_id.analytic_account_id:
-            if not self.analytic_distribution:
-                self.analytic_distribution = {str(self.move_id.warehouse_id.analytic_account_id.id): 100.0}
+        dist = self.analytic_distribution or {}
+        branch_account = self.move_id.warehouse_id.analytic_account_id if self.move_id.warehouse_id else False
+        if branch_account:
+            dist = merge_analytic_distribution(dist, branch_account, plan=self.move_id.company_id.get_branch_analytic_plan())
+        if self.product_id and self.product_id.analytic_account_id:
+            dist = merge_analytic_distribution(dist, self.product_id.analytic_account_id)
+        self.analytic_distribution = dist
 
     @api.depends('product_id', 'product_uom_id', 'move_id.partner_id.customer_type')
     def _compute_price_unit(self):

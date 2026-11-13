@@ -1,6 +1,28 @@
-from odoo import models, fields, api, _
+from odoo import models, fields, api, _, Command
 from odoo.exceptions import UserError
 from markupsafe import Markup
+
+
+def _analytic_for_company(env, analytic, company):
+    """Return the equivalent analytic value for the target company."""
+    if not analytic:
+        return env['account.analytic.account']
+    analytic = analytic.sudo()
+    if not analytic.company_id or analytic.company_id == company:
+        return analytic
+    counterpart = env['account.analytic.account'].sudo().with_context(active_test=False).search([
+        ('code', '=', analytic.code),
+        ('plan_id', '=', analytic.plan_id.id),
+        ('company_id', '=', company.id),
+    ], limit=1)
+    if not counterpart:
+        raise UserError(_(
+            "Analytic value %(analytic)s belongs to %(source)s and has no matching value for %(target)s.",
+            analytic=analytic.display_name,
+            source=analytic.company_id.display_name,
+            target=company.display_name,
+        ))
+    return counterpart
 
 class LocalRFQ(models.Model):
     _name = 'local.rfq'
@@ -44,8 +66,10 @@ class LocalRFQ(models.Model):
     # Vendor Management
     vendor_ids = fields.Many2many(
         'res.partner',
+        'local_rfq_res_partner_rel',
+        'local_rfq_id',
+        'res_partner_id',
         string='Suppliers',
-        domain=[('supplier_rank', '>', 0)]
     )
     
     # Comparison Logic
@@ -123,7 +147,22 @@ class LocalRFQ(models.Model):
                 company_id = vals.get('company_id') or self.env.company.id
                 self._ensure_company_sequence(company_id)
                 vals['name'] = self.env['ir.sequence'].with_company(company_id).next_by_code('local.rfq') or 'New'
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        for rec in records:
+            vendors = rec.vendor_ids | rec.quote_ids.mapped('partner_id')
+            zero_rank = vendors.filtered(lambda p: p.supplier_rank == 0)
+            if zero_rank:
+                zero_rank.sudo().write({'supplier_rank': 1})
+        return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        for rec in self:
+            vendors = rec.vendor_ids | rec.quote_ids.mapped('partner_id')
+            zero_rank = vendors.filtered(lambda p: p.supplier_rank == 0)
+            if zero_rank:
+                zero_rank.sudo().write({'supplier_rank': 1})
+        return res
 
     def _ensure_company_sequence(self, company_id):
         """Automatically create a separate sequence for a company if it doesn't exist."""
@@ -142,7 +181,16 @@ class LocalRFQ(models.Model):
         selected_quotes = self.quote_ids.filtered(lambda q: q.selected)
         if not selected_quotes:
             raise UserError(_("Please select winning vendors in the Comparison Sheet before submitting."))
-        self.write({'state': 'submitted'})
+
+        # Ensure vendor_ids preserves all suppliers
+        quote_vendors = self.quote_ids.mapped('partner_id')
+        all_vendors = self.vendor_ids | quote_vendors
+        vals_to_write = {'state': 'submitted'}
+        if all_vendors and set(all_vendors.ids) != set(self.vendor_ids.ids):
+            vals_to_write['vendor_ids'] = [Command.set(all_vendors.ids)]
+        if all_vendors:
+            all_vendors.filtered(lambda p: p.supplier_rank == 0).sudo().write({'supplier_rank': 1})
+        self.write(vals_to_write)
         self.message_post(body=_("Local RFQ submitted for Commercial Dep't approval by %s.") % self.env.user.name)
         self._notify_next_approver('submitted')
 
@@ -393,7 +441,14 @@ class LocalRFQ(models.Model):
         if not self.quote_ids.filtered(lambda q: q.selected):
             raise UserError(_("No quotes could be selected as winners. Please ensure prices or scores are entered."))
 
-        self.write({'state': 'winner_picked'})
+        # Hold and preserve all suppliers in vendor_ids
+        quote_vendors = self.quote_ids.mapped('partner_id')
+        all_vendors = self.vendor_ids | quote_vendors
+        vals_to_write = {'state': 'winner_picked'}
+        if all_vendors:
+            vals_to_write['vendor_ids'] = [Command.set(all_vendors.ids)]
+            all_vendors.filtered(lambda p: p.supplier_rank == 0).sudo().write({'supplier_rank': 1})
+        self.write(vals_to_write)
         self.message_post(body=_("Winners picked based on %s selection method.") % dict(self._fields['winner_selection_method'].selection).get(self.winner_selection_method))
         return True
 
@@ -416,21 +471,31 @@ class LocalRFQ(models.Model):
 
         for vendor in vendors:
             vendor_quotes = selected_quotes.filtered(lambda q: q.partner_id == vendor)
+            order_lines = []
+            for quote in vendor_quotes:
+                source_analytic = quote.pr_line_id.sudo().cost_center_id
+                analytic = _analytic_for_company(self.env, source_analytic, self.company_id)
+                if source_analytic and analytic != source_analytic:
+                    quote.pr_line_id.sudo().write({'cost_center_id': analytic.id})
+                order_lines.append((0, 0, {
+                    'product_id': quote.product_id.id,
+                    'product_qty': quote.pr_line_id.quantity,
+                    'name': quote.product_id.display_name,
+                    'price_unit': quote.price_unit,
+                    'date_planned': fields.Datetime.now(),
+                    'analytic_distribution': {str(analytic.id): 100} if analytic else False,
+                }))
             po_vals = {
                 'partner_id': vendor.id,
                 'origin': self.name,
                 'local_rfq_id': self.id,
+                'company_id': self.company_id.id,
                 'state': 'draft',
-                'order_line': [(0, 0, {
-                    'product_id': quote.product_id.id,
-                    'product_qty': quote.pr_line_id.quantity, # Assuming quantity is on PR line
-                    'name': quote.product_id.display_name,
-                    'price_unit': quote.price_unit,
-                    'date_planned': fields.Datetime.now(),
-                    'analytic_distribution': {str(quote.pr_line_id.cost_center_id.id): 100} if quote.pr_line_id.cost_center_id else False,
-                }) for quote in vendor_quotes],
+                'order_line': order_lines,
             }
-            pos |= self.env['purchase.order'].create(po_vals)
+            pos |= self.env['purchase.order'].with_company(self.company_id).with_context(
+                allowed_company_ids=[self.company_id.id]
+            ).create(po_vals)
 
         self.write({'state': 'po_created'})
         return self.action_view_pos()
@@ -463,7 +528,7 @@ class LocalRFQQuote(models.Model):
     categ_id = fields.Many2one('product.category', string='Category', related='product_id.categ_id', readonly=True)
     image_128 = fields.Image(string='Image', related='product_id.image_128', readonly=True)
     image_1920 = fields.Image(string='Full Image', related='product_id.image_1920', readonly=True)
-    partner_id = fields.Many2one('res.partner', string='Vendor', required=True, domain="[('vendor_type', '=', 'local')]")
+    partner_id = fields.Many2one('res.partner', string='Vendor', required=True)
     cost_center_id = fields.Many2one('account.analytic.account', string='Cost Center', related='pr_line_id.cost_center_id')
     
     price_unit = fields.Float(string='Unit Price')

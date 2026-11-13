@@ -43,11 +43,24 @@ class LocalPaymentRequest(models.Model):
         store=True,
         tracking=True
     )
+    cost_center_plan_id = fields.Many2one(
+        'account.analytic.plan',
+        string='Cost Center Plan',
+        compute='_compute_cost_center_plan_id',
+    )
     cost_center_id = fields.Many2one(
         'account.analytic.account',
         string='Cost Center',
+        domain="['|', ('company_id', '=', False), ('company_id', '=', company_id), ('plan_id', '=?', cost_center_plan_id)]",
+        check_company=True,
         tracking=True
     )
+
+    @api.depends('company_id')
+    def _compute_cost_center_plan_id(self):
+        for req in self:
+            company = req.company_id or self.env.company
+            req.cost_center_plan_id = company.get_cost_center_analytic_plan()
     request_date = fields.Date(
         string='Request Date',
         default=fields.Date.context_today,

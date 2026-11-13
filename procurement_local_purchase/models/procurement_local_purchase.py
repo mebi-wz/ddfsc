@@ -38,12 +38,36 @@ class LocalPurchaseRequisition(models.Model):
         store=True,
         tracking=True
     )
+    cost_center_plan_id = fields.Many2one(
+        'account.analytic.plan',
+        string='Cost Center Plan',
+        compute='_compute_cost_center_plan_id',
+    )
     cost_center_id = fields.Many2one(
         'account.analytic.account',
         string='Cost Center',
+        domain="['|', ('company_id', '=', False), ('company_id', '=', company_id), ('plan_id', '=?', cost_center_plan_id)]",
+        check_company=True,
         store=True,
         tracking=True
     )
+
+    @api.depends('company_id')
+    def _compute_cost_center_plan_id(self):
+        for req in self:
+            company = req.company_id or self.env.company
+            req.cost_center_plan_id = company.get_cost_center_analytic_plan()
+
+    @api.onchange('cost_center_id')
+    def _onchange_cost_center_id(self):
+        if self.cost_center_id:
+            for line in self.line_ids:
+                line.cost_center_id = self.cost_center_id
+
+    @api.onchange('company_id')
+    def _onchange_company_id_update_cost_center(self):
+        if self.company_id and self.cost_center_id and self.cost_center_id.company_id and self.cost_center_id.company_id != self.company_id:
+            self.cost_center_id = False
     procurement_method = fields.Selection(
         [
             ('rfq', 'RFQ'),
@@ -357,10 +381,17 @@ class LocalPurchaseRequisitionLine(models.Model):
             self.product_uom_id = self.product_id.uom_id
 
 
+    cost_center_plan_id = fields.Many2one(
+        'account.analytic.plan',
+        string='Cost Center Plan',
+        related='requisition_id.cost_center_plan_id',
+    )
     cost_center_id = fields.Many2one(
         'account.analytic.account',
         string='Cost Center',
         related='requisition_id.cost_center_id',
+        domain="['|', ('company_id', '=', False), ('company_id', '=', company_id), ('plan_id', '=?', cost_center_plan_id)]",
+        check_company=True,
         store=True
     )
     unit_price = fields.Float(string='Unit Price', default=0.0 )

@@ -1,5 +1,6 @@
 from odoo.tests.common import TransactionCase, tagged
 from odoo import fields
+from odoo.addons.procurement_foreign_rfq.models.foreign_rfq import _analytic_for_company
 
 @tagged('post_install', '-at_install')
 class TestForeignRFQ(TransactionCase):
@@ -13,8 +14,29 @@ class TestForeignRFQ(TransactionCase):
         })
         self.product = self.Product.create({
             'name': 'Test Foreign Product',
+            'default_code': 'TEST-FRFQ-001',
             'type': 'consu'
         })
+
+    def test_analytic_value_is_resolved_for_po_company(self):
+        company_two = self.env['res.company'].create({'name': 'RFQ Test Company'})
+        plan = self.env['account.analytic.plan'].create({'name': 'RFQ Test Plan'})
+        analytic_one = self.env['account.analytic.account'].create({
+            'name': 'Quality Control',
+            'code': 'DPT-TEST',
+            'plan_id': plan.id,
+            'company_id': self.env.company.id,
+        })
+        analytic_two = self.env['account.analytic.account'].create({
+            'name': 'Quality Control',
+            'code': 'DPT-TEST',
+            'plan_id': plan.id,
+            'company_id': company_two.id,
+        })
+
+        resolved = _analytic_for_company(self.env, analytic_one, company_two)
+
+        self.assertEqual(resolved, analytic_two)
 
     def test_foreign_rfq_workflow_and_currency_request(self):
         """Test the full workflow of Foreign RFQ, auto currency request creation, and approval."""
@@ -37,15 +59,11 @@ class TestForeignRFQ(TransactionCase):
         rfq.action_approve()
         self.assertEqual(rfq.state, 'submitted', "RFQ state should transition to submitted")
 
-        # 3. Transition submitted -> verified (Verify button)
-        rfq.action_approve()
-        self.assertEqual(rfq.state, 'verified', "RFQ state should transition to verified")
-
-        # 4. Transition verified -> pending_currency (CEO Approve button)
+        # 3. Transition submitted -> pending_currency
         rfq.action_approve()
         self.assertEqual(rfq.state, 'pending_currency', "RFQ state should transition to pending_currency")
 
-        # 5. Check if Currency Request was automatically created
+        # 4. Check if Currency Request was automatically created
         self.assertEqual(rfq.currency_count, 1, "A currency request should have been automatically created")
         currency_request = rfq.currency_request_ids[0]
         self.assertEqual(currency_request.state, 'draft', "New currency request should be in draft state")
@@ -54,7 +72,7 @@ class TestForeignRFQ(TransactionCase):
         self.assertEqual(currency_request.total_amount_usd, 150.0, "Amount should match RFQ total amount")
         self.assertTrue(currency_request.amount_in_word, "Amount in word should be populated")
 
-        # 6. Progress the Currency Request to approved
+        # 5. Progress the Currency Request to approved
         currency_request.action_queue()
         self.assertEqual(currency_request.state, 'queued')
         
@@ -64,5 +82,5 @@ class TestForeignRFQ(TransactionCase):
         currency_request.action_approve()
         self.assertEqual(currency_request.state, 'approved')
 
-        # 7. Check if RFQ state is updated to approved (Currency Approved)
+        # 6. Check if RFQ state is updated to approved (Currency Approved)
         self.assertEqual(rfq.state, 'approved', "RFQ state should automatically transition to approved once currency is approved")

@@ -7,16 +7,42 @@
         <field name="priority">25</field>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='code']" position="after">
+                <field name="branch_plan_id" invisible="1"/>
+                <field name="analytic_account_id"
+                       string="Branch"
+                       domain="['|', ('company_id', '=', False), ('company_id', '=', company_id), ('plan_id', '=?', branch_plan_id)]"
+                       options="{'no_create': True}"
+                       placeholder="Select Branch..."/>
                 <field name="is_main_warehouse"/>
             </xpath>
-            <xpath expr="//page[@name='technical_info']" position="before">
-                <page string="Analytics" name="analytics">
-                    <group>
-                        <group string="Analytic Accounting">
-                            <field name="analytic_account_id"/>
-                        </group>
-                    </group>
-                </page>
+        </field>
+    </record>
+
+    <record id="view_warehouse_tree_inherit_ddfsc" model="ir.ui.view">
+        <field name="name">stock.warehouse.list.inherit.ddfsc</field>
+        <field name="model">stock.warehouse</field>
+        <field name="inherit_id" ref="stock.view_warehouse_tree"/>
+        <field name="priority">25</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="analytic_account_id" string="Branch" optional="show"/>
+                <field name="is_main_warehouse" string="Main Warehouse" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="stock_warehouse_view_search_inherit_ddfsc" model="ir.ui.view">
+        <field name="name">stock.warehouse.search.inherit.ddfsc</field>
+        <field name="model">stock.warehouse</field>
+        <field name="inherit_id" ref="stock.stock_warehouse_view_search"/>
+        <field name="priority">25</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="analytic_account_id" string="Branch"/>
+            </xpath>
+            <xpath expr="//filter[@name='inactive']" position="after">
+                <separator/>
+                <filter name="group_branch" string="Branch" context="{'group_by': 'analytic_account_id'}"/>
             </xpath>
         </field>
     </record>

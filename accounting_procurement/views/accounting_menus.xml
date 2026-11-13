@@ -175,10 +175,12 @@
     <!-- PROCUREMENT / PURCHASE INVOICING & PAYMENTS MENUS        -->
     <!-- (Added to Purchase module without altering Accounting)   -->
     <!-- ======================================================== -->
-    <menuitem id="menu_purchase_invoicing_root"
-              name="Invoicing"
-              parent="purchase.menu_purchase_root"
-              sequence="20"/>
+    <record id="menu_purchase_invoicing_root" model="ir.ui.menu">
+        <field name="name">Invoicing</field>
+        <field name="parent_id" ref="purchase.menu_purchase_root"/>
+        <field name="sequence">20</field>
+        <field name="active" eval="False"/>
+    </record>
 
     <menuitem id="menu_purchase_vendor_bills"
               name="Bills"

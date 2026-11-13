@@ -1,0 +1,1220 @@
+{
+  "accounts": [
+    {
+      "code": "1010",
+      "name": "Cash on Hand - Control",
+      "account_type": "asset_cash",
+      "normal_balance": "Debit",
+      "required_dimensions": "Custodian (subledger)",
+      "replaces": "1101 (183 accts)"
+    },
+    {
+      "code": "1020",
+      "name": "Petty Cash Fund - Control",
+      "account_type": "asset_cash",
+      "normal_balance": "Debit",
+      "required_dimensions": "Custodian (subledger)",
+      "replaces": "1102 (23 accts)"
+    },
+    {
+      "code": "1030",
+      "name": "Payroll Fund - Control",
+      "account_type": "asset_cash",
+      "normal_balance": "Debit",
+      "required_dimensions": "Custodian (subledger)",
+      "replaces": "1103 (20 accts)"
+    },
+    {
+      "code": "1040",
+      "name": "Revolving Fund - Control",
+      "account_type": "asset_cash",
+      "normal_balance": "Debit",
+      "required_dimensions": "Custodian (subledger)",
+      "replaces": "1105 (16 accts)"
+    },
+    {
+      "code": "1050",
+      "name": "Purchase Fund - Control",
+      "account_type": "asset_cash",
+      "normal_balance": "Debit",
+      "required_dimensions": "Custodian (subledger)",
+      "replaces": "1106 (12 accts)"
+    },
+    {
+      "code": "1060",
+      "name": "Fuel Coupon Fund - Control",
+      "account_type": "asset_cash",
+      "normal_balance": "Debit",
+      "required_dimensions": "Custodian (subledger)",
+      "replaces": "1108 (12 accts)"
+    },
+    {
+      "code": "1070",
+      "name": "Cash at Bank - CBE Dechatu Branch",
+      "account_type": "asset_cash",
+      "normal_balance": "Debit",
+      "required_dimensions": "Branch",
+      "replaces": "1104 (subset)"
+    },
+    {
+      "code": "1071",
+      "name": "Cash at Bank - CBE Adama Branch",
+      "account_type": "asset_cash",
+      "normal_balance": "Debit",
+      "required_dimensions": "Branch",
+      "replaces": "1104 (subset)"
+    },
+    {
+      "code": "1072",
+      "name": "Cash at Bank - CBE Jijiga Branch",
+      "account_type": "asset_cash",
+      "normal_balance": "Debit",
+      "required_dimensions": "Branch",
+      "replaces": "1104 (subset)"
+    },
+    {
+      "code": "1073",
+      "name": "Cash at Bank - Other Bank Accounts (one row per real account)",
+      "account_type": "asset_cash",
+      "normal_balance": "Debit",
+      "required_dimensions": "Branch/Bank",
+      "replaces": "1104 (subset)"
+    },
+    {
+      "code": "1090",
+      "name": "Cash in Transit / Bank Advice Clearing",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "Branch",
+      "replaces": "1101 029 etc."
+    },
+    {
+      "code": "1095",
+      "name": "Cash Suspense (must clear to zero each period)",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "1107"
+    },
+    {
+      "code": "1100",
+      "name": "Trade Accounts Receivable - Control",
+      "account_type": "asset_receivable",
+      "normal_balance": "Debit",
+      "required_dimensions": "Customer (subledger)",
+      "replaces": "1401xxx (2,825 accts)"
+    },
+    {
+      "code": "1105",
+      "name": "Trade Accounts Receivable - Institutional/Export - Control",
+      "account_type": "asset_receivable",
+      "normal_balance": "Debit",
+      "required_dimensions": "Customer (subledger)",
+      "replaces": "1401xxx (subset)"
+    },
+    {
+      "code": "1150",
+      "name": "Allowance for Doubtful Accounts",
+      "account_type": "asset_current",
+      "normal_balance": "Credit (contra)",
+      "required_dimensions": "-",
+      "replaces": "1150"
+    },
+    {
+      "code": "1160",
+      "name": "Employee Advances & Receivables - Control",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "Employee (subledger)",
+      "replaces": "-"
+    },
+    {
+      "code": "1170",
+      "name": "Other Receivables",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "1180",
+      "name": "VAT Receivable",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "2201 (subset)"
+    },
+    {
+      "code": "1190",
+      "name": "Withholding Tax Receivable",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "1200",
+      "name": "Raw Material - Wheat/Grain",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "Product Line",
+      "replaces": "1503xxx (subset)"
+    },
+    {
+      "code": "1205",
+      "name": "Raw Material - Sugar, Premix, Chemicals & Other Ingredients",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "Product Line",
+      "replaces": "1503xxx (subset)"
+    },
+    {
+      "code": "1210",
+      "name": "Packing Materials",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "Product Line",
+      "replaces": "1504xxx (21 accts)"
+    },
+    {
+      "code": "1220",
+      "name": "Spare Parts",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "1505xxx (15 accts)"
+    },
+    {
+      "code": "1230",
+      "name": "Other Supplies (stationery, cleaning, etc.)",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "1506xxx (12 accts)"
+    },
+    {
+      "code": "1240",
+      "name": "Fuel & Lubricants",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "1509xxx (3 accts)"
+    },
+    {
+      "code": "1250",
+      "name": "Work-in-Process",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "Product Line",
+      "replaces": "1502xxx (7 accts)"
+    },
+    {
+      "code": "1260",
+      "name": "Finished Goods",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "Product Line",
+      "replaces": "1501xxx (7 accts)"
+    },
+    {
+      "code": "1270",
+      "name": "Goods-in-Transit / Import LC - Control",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "Shipment (subledger)",
+      "replaces": "1603/1604 (287 accts)"
+    },
+    {
+      "code": "1275",
+      "name": "Local Transit Store",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "Product Line",
+      "replaces": "1510xxx (5 accts)"
+    },
+    {
+      "code": "1290",
+      "name": "Inventory Provision / Obsolescence",
+      "account_type": "asset_current",
+      "normal_balance": "Credit (contra)",
+      "required_dimensions": "-",
+      "replaces": "5101 104 etc."
+    },
+    {
+      "code": "1300",
+      "name": "Prepaid Expenses",
+      "account_type": "asset_prepayments",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "1310",
+      "name": "Advances to Suppliers - Control",
+      "account_type": "asset_prepayments",
+      "normal_balance": "Debit",
+      "required_dimensions": "Vendor (subledger)",
+      "replaces": "-"
+    },
+    {
+      "code": "1330",
+      "name": "Other Current Assets",
+      "account_type": "asset_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "1700",
+      "name": "Land",
+      "account_type": "asset_fixed",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "1705",
+      "name": "Building & Site Improvements",
+      "account_type": "asset_fixed",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "1702xxx (7 accts)"
+    },
+    {
+      "code": "1710",
+      "name": "Plant & Machinery - Flour Mill",
+      "account_type": "asset_fixed",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "1703 001"
+    },
+    {
+      "code": "1711",
+      "name": "Plant & Machinery - Long Cut Pasta (LCP)",
+      "account_type": "asset_fixed",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "1703 002"
+    },
+    {
+      "code": "1712",
+      "name": "Plant & Machinery - Short Cut Pasta (SCP)",
+      "account_type": "asset_fixed",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "1703 003"
+    },
+    {
+      "code": "1713",
+      "name": "Plant & Machinery - Biscuit Plant",
+      "account_type": "asset_fixed",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "1703 004"
+    },
+    {
+      "code": "1714",
+      "name": "Plant & Machinery - Utility Plant (Boiler/Generator/Compressor)",
+      "account_type": "asset_fixed",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "1703 005-006"
+    },
+    {
+      "code": "1715",
+      "name": "Plant & Machinery - Weighbridge & Other Equipment",
+      "account_type": "asset_fixed",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "1703 007+"
+    },
+    {
+      "code": "1720",
+      "name": "Motor Vehicles",
+      "account_type": "asset_fixed",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "1730",
+      "name": "Office & Computer Equipment",
+      "account_type": "asset_fixed",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "1740",
+      "name": "Furniture & Fixtures",
+      "account_type": "asset_fixed",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "1750",
+      "name": "Capital Work-in-Progress",
+      "account_type": "asset_fixed",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "1800",
+      "name": "Accumulated Depreciation - Building",
+      "account_type": "asset_non_current",
+      "normal_balance": "Credit (contra)",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "1810",
+      "name": "Accumulated Depreciation - Plant & Machinery",
+      "account_type": "asset_non_current",
+      "normal_balance": "Credit (contra)",
+      "required_dimensions": "Product Line",
+      "replaces": "-"
+    },
+    {
+      "code": "1820",
+      "name": "Accumulated Depreciation - Motor Vehicles",
+      "account_type": "asset_non_current",
+      "normal_balance": "Credit (contra)",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "1830",
+      "name": "Accumulated Depreciation - Office Equipment & Furniture",
+      "account_type": "asset_non_current",
+      "normal_balance": "Credit (contra)",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "1900",
+      "name": "Deposits & Guarantees Paid",
+      "account_type": "asset_non_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "1990",
+      "name": "Other Non-Current Assets",
+      "account_type": "asset_non_current",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "1401 002 (misc.)"
+    },
+    {
+      "code": "2000",
+      "name": "Trade Accounts Payable - Local Suppliers - Control",
+      "account_type": "liability_payable",
+      "normal_balance": "Credit",
+      "required_dimensions": "Vendor (subledger)",
+      "replaces": "2101xxx (138 accts)"
+    },
+    {
+      "code": "2010",
+      "name": "Trade Accounts Payable - Import Suppliers - Control",
+      "account_type": "liability_payable",
+      "normal_balance": "Credit",
+      "required_dimensions": "Vendor (subledger)",
+      "replaces": "2101xxx (subset)"
+    },
+    {
+      "code": "2020",
+      "name": "Sundry Creditors - Control",
+      "account_type": "liability_payable",
+      "normal_balance": "Credit",
+      "required_dimensions": "Vendor (subledger)",
+      "replaces": "2102xxx (44 accts)"
+    },
+    {
+      "code": "2030",
+      "name": "Unclaimed Salary & Wages - Control",
+      "account_type": "liability_current",
+      "normal_balance": "Credit",
+      "required_dimensions": "Employee (subledger)",
+      "replaces": "2105xxx (37 accts)"
+    },
+    {
+      "code": "2040",
+      "name": "Accrued Liabilities - Salary & Wages",
+      "account_type": "liability_current",
+      "normal_balance": "Credit",
+      "required_dimensions": "Department",
+      "replaces": "2107xxx (subset)"
+    },
+    {
+      "code": "2045",
+      "name": "Accrued Liabilities - Other",
+      "account_type": "liability_current",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "2107xxx (subset)"
+    },
+    {
+      "code": "2050",
+      "name": "Customer Deposits / Performance Bonds Held",
+      "account_type": "liability_current",
+      "normal_balance": "Credit",
+      "required_dimensions": "Customer (subledger)",
+      "replaces": "2401xxx (11 accts)"
+    },
+    {
+      "code": "2060",
+      "name": "Deferred / Unearned Revenue",
+      "account_type": "liability_current",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "2109xxx"
+    },
+    {
+      "code": "2100",
+      "name": "VAT Payable",
+      "account_type": "liability_current",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "2201xxx (subset)"
+    },
+    {
+      "code": "2110",
+      "name": "Withholding Tax Payable",
+      "account_type": "liability_current",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "2201xxx (subset)"
+    },
+    {
+      "code": "2120",
+      "name": "Employee Income Tax Payable (PAYE)",
+      "account_type": "liability_current",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "2130",
+      "name": "Pension Payable (Employee & Employer)",
+      "account_type": "liability_current",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "2140",
+      "name": "Corporate Profit Tax Payable",
+      "account_type": "liability_current",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "2301xxx"
+    },
+    {
+      "code": "2150",
+      "name": "Dividend Payable",
+      "account_type": "liability_current",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "2301xxx"
+    },
+    {
+      "code": "2200",
+      "name": "Short-Term Bank Loan",
+      "account_type": "liability_current",
+      "normal_balance": "Credit",
+      "required_dimensions": "Branch",
+      "replaces": "2402xxx (3 accts)"
+    },
+    {
+      "code": "2210",
+      "name": "Current Portion of Long-Term Loan",
+      "account_type": "liability_current",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "2300",
+      "name": "Long-Term Bank Loan",
+      "account_type": "liability_non_current",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "2601xxx (2 accts)"
+    },
+    {
+      "code": "2310",
+      "name": "Deferred Tax Liability",
+      "account_type": "liability_non_current",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "2501"
+    },
+    {
+      "code": "3000",
+      "name": "Share Capital",
+      "account_type": "equity",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "3010",
+      "name": "Additional Paid-in Capital",
+      "account_type": "equity",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "3100",
+      "name": "Legal Reserve",
+      "account_type": "equity",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "3110",
+      "name": "Other Reserves",
+      "account_type": "equity",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "3200",
+      "name": "Retained Earnings",
+      "account_type": "equity",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "Equity-Retained Earnings"
+    },
+    {
+      "code": "3210",
+      "name": "Current Year Profit/(Loss)",
+      "account_type": "equity_unaffected",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "Equity-gets closed"
+    },
+    {
+      "code": "4010",
+      "name": "Sales - Wheat Flour",
+      "account_type": "income",
+      "normal_balance": "Credit",
+      "required_dimensions": "Branch",
+      "replaces": "4101 001"
+    },
+    {
+      "code": "4020",
+      "name": "Sales - Long Cut Pasta",
+      "account_type": "income",
+      "normal_balance": "Credit",
+      "required_dimensions": "Branch",
+      "replaces": "4101 002"
+    },
+    {
+      "code": "4030",
+      "name": "Sales - Short Cut Pasta",
+      "account_type": "income",
+      "normal_balance": "Credit",
+      "required_dimensions": "Branch",
+      "replaces": "4101 003"
+    },
+    {
+      "code": "4040",
+      "name": "Sales - High Energy Biscuit",
+      "account_type": "income",
+      "normal_balance": "Credit",
+      "required_dimensions": "Branch",
+      "replaces": "4101 004"
+    },
+    {
+      "code": "4050",
+      "name": "Sales - Cherry Biscuit",
+      "account_type": "income",
+      "normal_balance": "Credit",
+      "required_dimensions": "Branch",
+      "replaces": "4101 005"
+    },
+    {
+      "code": "4060",
+      "name": "Sales - Yummy Biscuit",
+      "account_type": "income",
+      "normal_balance": "Credit",
+      "required_dimensions": "Branch",
+      "replaces": "4101 006"
+    },
+    {
+      "code": "4070",
+      "name": "Sales - Macaroni",
+      "account_type": "income",
+      "normal_balance": "Credit",
+      "required_dimensions": "Branch",
+      "replaces": "4101 009"
+    },
+    {
+      "code": "4080",
+      "name": "Sales - Bread",
+      "account_type": "income",
+      "normal_balance": "Credit",
+      "required_dimensions": "Branch",
+      "replaces": "4101 010/012"
+    },
+    {
+      "code": "4090",
+      "name": "Sales - By-Products & Scrap",
+      "account_type": "income",
+      "normal_balance": "Credit",
+      "required_dimensions": "Product Line",
+      "replaces": "4101 007/008"
+    },
+    {
+      "code": "4100",
+      "name": "Sales Returns & Allowances",
+      "account_type": "income",
+      "normal_balance": "Debit (contra)",
+      "required_dimensions": "Product Line",
+      "replaces": "-"
+    },
+    {
+      "code": "4110",
+      "name": "Sales Discounts",
+      "account_type": "income",
+      "normal_balance": "Debit (contra)",
+      "required_dimensions": "Product Line",
+      "replaces": "-"
+    },
+    {
+      "code": "4200",
+      "name": "Sale of Packaging Materials / Scrap",
+      "account_type": "income_other",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "4050"
+    },
+    {
+      "code": "4300",
+      "name": "Professional / Service Fees Income",
+      "account_type": "income_other",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "4000"
+    },
+    {
+      "code": "4400",
+      "name": "Interest Income",
+      "account_type": "income_other",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "4100"
+    },
+    {
+      "code": "4900",
+      "name": "Other Income",
+      "account_type": "income_other",
+      "normal_balance": "Credit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "5010",
+      "name": "Direct Material Consumed",
+      "account_type": "expense_direct_cost",
+      "normal_balance": "Debit",
+      "required_dimensions": "Product Line (required)",
+      "replaces": "5101-5108 xxx (~91 accts)"
+    },
+    {
+      "code": "5020",
+      "name": "Direct Labor",
+      "account_type": "expense_direct_cost",
+      "normal_balance": "Debit",
+      "required_dimensions": "Product Line (required)",
+      "replaces": "5201-5207 xxx (17 accts)"
+    },
+    {
+      "code": "5030",
+      "name": "Factory Overhead - Indirect Labor & Benefits",
+      "account_type": "expense_direct_cost",
+      "normal_balance": "Debit",
+      "required_dimensions": "Product Line + Department",
+      "replaces": "5401-5407 xxx (subset, ~140 accts)"
+    },
+    {
+      "code": "5040",
+      "name": "Factory Overhead - Depreciation of Production Assets",
+      "account_type": "expense_direct_cost",
+      "normal_balance": "Debit",
+      "required_dimensions": "Product Line",
+      "replaces": "5401-5407 (dep'n lines)"
+    },
+    {
+      "code": "5050",
+      "name": "Factory Overhead - Utilities (Power, Water, Steam, Fuel)",
+      "account_type": "expense_direct_cost",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "6203/6204"
+    },
+    {
+      "code": "5060",
+      "name": "Factory Overhead - Repairs & Maintenance (Production)",
+      "account_type": "expense_direct_cost",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "6101xxx (subset)"
+    },
+    {
+      "code": "5070",
+      "name": "Factory Overhead - Quality Control",
+      "account_type": "expense_direct_cost",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "6103xxx (32 accts)"
+    },
+    {
+      "code": "5080",
+      "name": "Factory Overhead - Workshop & Technical Services",
+      "account_type": "expense_direct_cost",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "6101xxx (39 accts)"
+    },
+    {
+      "code": "5090",
+      "name": "Factory Overhead - Other Production Costs",
+      "account_type": "expense_direct_cost",
+      "normal_balance": "Debit",
+      "required_dimensions": "Product Line",
+      "replaces": "6104xxx (12 accts)"
+    },
+    {
+      "code": "5095",
+      "name": "Production Variance / Overhead Absorption Clearing",
+      "account_type": "expense_direct_cost",
+      "normal_balance": "Debit/Credit",
+      "required_dimensions": "-",
+      "replaces": "5901"
+    },
+    {
+      "code": "5100",
+      "name": "Cost of Goods Sold - Finished Goods",
+      "account_type": "expense_direct_cost",
+      "normal_balance": "Debit",
+      "required_dimensions": "Product Line (required)",
+      "replaces": "7101 (7 accts)"
+    },
+    {
+      "code": "5200",
+      "name": "Inventory Write-off / Obsolescence Expense",
+      "account_type": "expense_direct_cost",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "5101 104"
+    },
+    {
+      "code": "6010",
+      "name": "Salaries & Wages - G&A",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101xxx (G&A subset)"
+    },
+    {
+      "code": "6020",
+      "name": "Overtime - G&A",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101 003"
+    },
+    {
+      "code": "6030",
+      "name": "Leave Pay - G&A",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101 004"
+    },
+    {
+      "code": "6040",
+      "name": "Severance Pay - G&A",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101 006"
+    },
+    {
+      "code": "6050",
+      "name": "Pension Contribution (7%) - G&A",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101 007"
+    },
+    {
+      "code": "6060",
+      "name": "Bonus - G&A",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101 008"
+    },
+    {
+      "code": "6070",
+      "name": "Medical & Personal Insurance - G&A",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101 010-011"
+    },
+    {
+      "code": "6080",
+      "name": "Uniform & Staff Welfare - G&A",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101 012"
+    },
+    {
+      "code": "6090",
+      "name": "Tuition / Training Fee - G&A",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101 013"
+    },
+    {
+      "code": "6100",
+      "name": "Transport / Housing / Other Allowances - G&A",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101 014"
+    },
+    {
+      "code": "6110",
+      "name": "Office Utilities",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "6120",
+      "name": "Communication (Phone, Internet, Postage)",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "6130",
+      "name": "Office Supplies & Printing",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "6140",
+      "name": "Depreciation - Office Assets",
+      "account_type": "expense_depreciation",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "6150",
+      "name": "Bad Debt Expense",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "6150 (kept as-is)"
+    },
+    {
+      "code": "6160",
+      "name": "Bank Charges & Fees",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Branch",
+      "replaces": "-"
+    },
+    {
+      "code": "6170",
+      "name": "Audit, Legal & Professional Fees",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "6180",
+      "name": "Insurance - General (Property/Fleet)",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "6190",
+      "name": "Donations & CSR",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "6250",
+      "name": "Other Taxes Expense",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "6250 (kept as-is)"
+    },
+    {
+      "code": "6350",
+      "name": "Maintenance & Repairs Expense - G&A",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "6350 (kept as-is)"
+    },
+    {
+      "code": "6900",
+      "name": "Miscellaneous G&A Expense",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "6410",
+      "name": "Interest Expense - Short-Term Loan",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "6420",
+      "name": "Interest Expense - Long-Term Loan",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "6430",
+      "name": "Foreign Exchange Loss",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "8010",
+      "name": "Salaries & Wages - Selling & Distribution",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101 001-002"
+    },
+    {
+      "code": "8020",
+      "name": "Overtime - Selling & Distribution",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101 003"
+    },
+    {
+      "code": "8030",
+      "name": "Leave Pay - Selling & Distribution",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101 004"
+    },
+    {
+      "code": "8040",
+      "name": "Severance Pay - Selling & Distribution",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101 006"
+    },
+    {
+      "code": "8050",
+      "name": "Pension Contribution (7%) - Selling & Distribution",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101 007"
+    },
+    {
+      "code": "8060",
+      "name": "Bonus - Selling & Distribution",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101 008"
+    },
+    {
+      "code": "8070",
+      "name": "Medical & Personal Insurance - Selling & Distribution",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101 010-011"
+    },
+    {
+      "code": "8080",
+      "name": "Uniform - Selling & Distribution",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101 012"
+    },
+    {
+      "code": "8090",
+      "name": "Taxi / Transport Allowance - Selling & Distribution",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Department",
+      "replaces": "8101 014"
+    },
+    {
+      "code": "8100",
+      "name": "Freight-Out / Distribution Cost",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Product Line",
+      "replaces": "-"
+    },
+    {
+      "code": "8110",
+      "name": "Advertising & Promotion",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    },
+    {
+      "code": "8120",
+      "name": "Sales Commission",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Customer (subledger)",
+      "replaces": "-"
+    },
+    {
+      "code": "8130",
+      "name": "Packaging for Distribution",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "Product Line",
+      "replaces": "-"
+    },
+    {
+      "code": "8900",
+      "name": "Other Selling & Distribution Expense",
+      "account_type": "expense",
+      "normal_balance": "Debit",
+      "required_dimensions": "-",
+      "replaces": "-"
+    }
+  ],
+  "dimensions": {
+    "Product Line": [
+      [
+        "PL-01",
+        "Wheat Flour"
+      ],
+      [
+        "PL-02",
+        "Long Cut Pasta (LCP)"
+      ],
+      [
+        "PL-03",
+        "Short Cut Pasta (SCP)"
+      ],
+      [
+        "PL-04",
+        "High Energy Biscuit (HEB)"
+      ],
+      [
+        "PL-05",
+        "Cherry Biscuit"
+      ],
+      [
+        "PL-06",
+        "Yummy Biscuit"
+      ],
+      [
+        "PL-07",
+        "Macaroni"
+      ],
+      [
+        "PL-08",
+        "Bread"
+      ],
+      [
+        "PL-09",
+        "By-Products/Scrap"
+      ]
+    ],
+    "Department / Cost Center": [
+      [
+        "DPT-01",
+        "Production - Milling"
+      ],
+      [
+        "DPT-02",
+        "Quality Control"
+      ],
+      [
+        "DPT-03",
+        "Workshop & Technical"
+      ],
+      [
+        "DPT-04",
+        "Boiler & Steam / Utilities"
+      ],
+      [
+        "DPT-05",
+        "Selling & Distribution"
+      ],
+      [
+        "DPT-06",
+        "General & Administration"
+      ],
+      [
+        "DPT-07",
+        "Finance"
+      ]
+    ],
+    "Branch / Location": [
+      [
+        "BR-01",
+        "Dire Dawa (HQ & Factory)"
+      ],
+      [
+        "BR-02",
+        "Dechatu"
+      ],
+      [
+        "BR-03",
+        "Adama"
+      ],
+      [
+        "BR-04",
+        "Jijiga"
+      ]
+    ]
+  }
+}

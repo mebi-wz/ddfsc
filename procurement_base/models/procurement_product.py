@@ -336,6 +336,37 @@ class PurchaseOrderLine(models.Model):
         readonly=True,
     )
 
+    @api.onchange('product_id')
+    def _onchange_product_id_set_analytic_dimension(self):
+        if self.product_id and self.product_id.analytic_account_id:
+            from odoo.addons.ddfsc_product.models.res_company import merge_analytic_distribution
+            self.analytic_distribution = merge_analytic_distribution(
+                self.analytic_distribution,
+                self.product_id.analytic_account_id,
+            )
+
+    def _prepare_account_move_line(self, move=False):
+        res = super()._prepare_account_move_line(move=move)
+        if self.analytic_distribution:
+            res['analytic_distribution'] = dict(self.analytic_distribution)
+        return res
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if not vals.get('display_type'):
+                product_id = vals.get('product_id')
+                if product_id:
+                    product = self.env['product.product'].browse(product_id)
+                    if product.analytic_account_id:
+                        from odoo.addons.ddfsc_product.models.res_company import merge_analytic_distribution
+                        dist = vals.get('analytic_distribution') or {}
+                        vals['analytic_distribution'] = merge_analytic_distribution(
+                            dist,
+                            product.analytic_account_id,
+                        )
+        return super().create(vals_list)
+
 
 class StockPicking(models.Model):
     _inherit = 'stock.picking'

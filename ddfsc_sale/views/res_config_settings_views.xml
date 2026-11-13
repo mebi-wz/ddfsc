@@ -22,6 +22,20 @@
                 </setting>
             </xpath>
             <xpath expr="//block[@id='pricing_setting_container']" position="after">
+                <block id="analytic_dimensions_container" string="Analytic Dimensions (Branch &amp; Product)">
+                    <setting id="analytic_branch_plan_setting" string="Branch &amp; Product Analytic Plans" help="Configure the Analytic Plans used as Branch and Product dimensions for multi-plan accounting.">
+                        <div class="content-group">
+                            <div class="row mt16">
+                                <label for="branch_analytic_plan_id" class="col-lg-5 o_light_label" string="Branch / Location Plan"/>
+                                <field name="branch_analytic_plan_id" class="oe_inline" options="{'no_create': True}" style="max-width: 250px;"/>
+                            </div>
+                            <div class="row mt8">
+                                <label for="product_analytic_plan_id" class="col-lg-5 o_light_label" string="Product Line Plan"/>
+                                <field name="product_analytic_plan_id" class="oe_inline" options="{'no_create': True}" style="max-width: 250px;"/>
+                            </div>
+                        </div>
+                    </setting>
+                </block>
                 <block id="top_buyers_setting_container" string="Top N Buyers Analytics">
                     <setting id="top_buyers_setting" string="Top Buyers Default Configuration" help="Define default ranking metric, time period, and number of buyers to rank.">
                         <div class="content-group">

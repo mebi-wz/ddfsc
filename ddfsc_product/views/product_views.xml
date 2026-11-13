@@ -38,6 +38,10 @@
                     </span>
                 </div>
             </xpath>
+            <xpath expr="//field[@name='categ_id']" position="after">
+                <field name="product_plan_id" invisible="1"/>
+                <field name="analytic_account_id" string="Analytic Account" options="{'no_create': True}" placeholder="Select Product Line dimension..."/>
+            </xpath>
         </field>
     </record>
 
@@ -78,6 +82,7 @@
             </xpath>
             <xpath expr="//field[@name='list_price']" position="after">
                 <field name="wholesale_price" string="Wholesale Price" widget="monetary" options="{'currency_field': 'currency_id'}" optional="show"/>
+                <field name="analytic_account_id" string="Analytic Account" optional="show"/>
             </xpath>
         </field>
     </record>
@@ -91,6 +96,7 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='name']" position="after">
                 <field name="hs_code" string="HS Code"/>
+                <field name="analytic_account_id" string="Analytic Account"/>
             </xpath>
         </field>
     </record>
@@ -104,6 +110,7 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='name']" position="after">
                 <field name="hs_code" string="HS Code"/>
+                <field name="analytic_account_id" string="Analytic Account"/>
             </xpath>
         </field>
     </record>

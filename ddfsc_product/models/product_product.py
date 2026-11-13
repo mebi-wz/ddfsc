@@ -6,6 +6,15 @@ from odoo.exceptions import ValidationError
 class ProductProduct(models.Model):
     _inherit = 'product.product'
 
+    analytic_account_id = fields.Many2one(
+        'account.analytic.account',
+        related='product_tmpl_id.analytic_account_id',
+        readonly=False,
+        store=True,
+        string='Analytic Account',
+        domain="[('plan_id', '=?', product_tmpl_id.product_plan_id)]",
+    )
+
     @api.depends('taxes_id', 'lst_price', 'wholesale_price')
     @api.depends_context('company')
     def _compute_tax_string(self):

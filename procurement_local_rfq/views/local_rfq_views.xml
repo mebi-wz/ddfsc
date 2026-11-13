@@ -11,6 +11,7 @@
                 <field name="requisition_id"/>
                 <field name="requested_by"/>
                 <field name="date_rfq"/>
+                <field name="vendor_ids" widget="many2many_tags" optional="show"/>
                 <field name="amount_total" optional="show" sum="Total"/>
                 <field name="state"
                        decoration-info="state in ['draft', 'winner_picked']"

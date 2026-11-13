@@ -51,7 +51,11 @@
                             <field name="payment_type" readonly="state != 'draft'"/>
                             <field name="requested_by" readonly="state != 'draft'"/>
                             <field name="department_id"/>
-                            <field name="cost_center_id" readonly="state != 'draft'"/>
+                            <field name="cost_center_plan_id" invisible="1"/>
+                            <field name="cost_center_id"
+                                   domain="['|', ('company_id', '=', False), ('company_id', '=', company_id), ('plan_id', '=?', cost_center_plan_id)]"
+                                   options="{'no_create': True}"
+                                   readonly="state != 'draft'"/>
                             <field name="request_date" readonly="state != 'draft'"/>
                         </group>
                         <group>

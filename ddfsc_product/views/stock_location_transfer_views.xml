@@ -95,22 +95,24 @@
                     <group>
                         <group string="From (Source)">
                             <field name="source_analytic_account_id"
+                                   domain="['|', ('company_id', '=', False), ('company_id', '=', company_id), ('plan_id', '=?', branch_plan_id)]"
                                    options="{'no_create': True}"
                                    readonly="state != 'draft'"/>
                             <field name="source_warehouse_id"
-                                   domain="[('analytic_account_id', '=', source_analytic_account_id)]"
+                                   domain="[('company_id', '=', company_id), ('analytic_account_id', '=', source_analytic_account_id)] if source_analytic_account_id else [('id', '=', False)]"
                                    options="{'no_create': True}"
-                                   readonly="state != 'draft'"/>
+                                   readonly="not source_analytic_account_id or state != 'draft'"/>
                             <field name="issue_picking_id" readonly="1" invisible="not issue_picking_id"/>
                         </group>
                         <group string="To (Destination)">
                             <field name="dest_analytic_account_id"
+                                   domain="['|', ('company_id', '=', False), ('company_id', '=', company_id), ('plan_id', '=?', branch_plan_id)]"
                                    options="{'no_create': True}"
                                    readonly="state != 'draft'"/>
                             <field name="dest_warehouse_id"
-                                   domain="[('analytic_account_id', '=', dest_analytic_account_id)]"
+                                   domain="[('company_id', '=', company_id), ('analytic_account_id', '=', dest_analytic_account_id)] if dest_analytic_account_id else [('id', '=', False)]"
                                    options="{'no_create': True}"
-                                   readonly="state != 'draft'"/>
+                                   readonly="not dest_analytic_account_id or state != 'draft'"/>
                             <field name="receive_picking_id" readonly="1" invisible="not receive_picking_id"/>
                         </group>
                     </group>

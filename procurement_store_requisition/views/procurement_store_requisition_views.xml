@@ -73,7 +73,11 @@
                         <group>
                             <field name="requested_by" readonly="state != 'draft'"/>
                             <field name="department_id" readonly="state != 'draft'"/>
-                            <field name="cost_center_id" readonly="state != 'draft'"/>
+                            <field name="cost_center_plan_id" invisible="1"/>
+                            <field name="cost_center_id"
+                                   domain="['|', ('company_id', '=', False), ('company_id', '=', company_id), ('plan_id', '=?', cost_center_plan_id)]"
+                                   options="{'no_create': True}"
+                                   readonly="state != 'draft'"/>
                         </group>
                         <group>
                             <field name="date_requisition" readonly="state != 'draft'"/>
@@ -101,7 +105,12 @@
                                            column_invisible="1"/>
                                     <field name="quantity" readonly="state != 'draft'"/>
                                     <field name="unit_price" readonly="state != 'draft'"/>
-                                    <field name="cost_center_id" optional="show"/>
+                                    <field name="company_id" column_invisible="True"/>
+                                    <field name="cost_center_plan_id" column_invisible="True"/>
+                                    <field name="cost_center_id"
+                                           domain="['|', ('company_id', '=', False), ('company_id', '=', company_id), ('plan_id', '=?', cost_center_plan_id)]"
+                                           options="{'no_create': True}"
+                                           optional="show"/>
                                     <field name="total_price" readonly="state != 'draft'"/>
                                     <field name="account_id" column_invisible="True" />
                                     <field name="qty_transferred" readonly="1" invisible="parent.state == 'draft'"/>

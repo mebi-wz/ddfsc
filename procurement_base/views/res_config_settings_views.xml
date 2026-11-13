@@ -32,6 +32,11 @@
                             <field name="set_po_date_as_receipt_date"/>
                         </setting>
                     </block>
+                    <block title="Analytic &amp; Cost Center Settings" name="pr_analytic_settings">
+                        <setting title="Cost Center Plan" help="Analytic Plan representing Cost Centers / Departments across Purchase Requisitions.">
+                            <field name="cost_center_analytic_plan_id" options="{'no_create': True}"/>
+                        </setting>
+                    </block>
 
                 </app>
 

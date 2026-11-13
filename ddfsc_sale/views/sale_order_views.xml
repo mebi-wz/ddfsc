@@ -11,9 +11,9 @@
                 <attribute name="statusbar_visible">draft,sent,to_approve,to_approve_discount,sale</attribute>
             </xpath>
 
-            <!-- Make Confirm button visible only to Managers/GM on draft/sent; salespeople must submit for approval -->
+            <!-- Confirmation is controlled by the DDFSC approval workflow. -->
             <xpath expr="//button[@id='action_confirm']" position="attributes">
-                <attribute name="invisible">state not in ('draft', 'sent') or not is_sales_approver</attribute>
+                <attribute name="invisible">1</attribute>
             </xpath>
             <!-- Eliminate duplicate Confirm button: hide the secondary un-IDed button -->
             <xpath expr="//button[@name='action_confirm' and not(@id)]" position="attributes">
@@ -72,16 +72,25 @@
                 </div>
             </xpath>
 
-            <!-- Place Sale Type, Location, Warehouse, and Order Discount right after Customer -->
+            <!-- Place Sale Type, Branch, Warehouse, and Order Discount right after Customer -->
             <xpath expr="//field[@name='partner_id']" position="after">
-                <field name="sale_type" widget="radio" options="{'horizontal': true}" readonly="state == 'sale'"/>
+                <field name="sale_type"
+                       widget="radio"
+                       options="{'horizontal': true}"
+                       readonly="1"
+                       force_save="1"/>
                 <field name="partner_credit_status" invisible="1"/>
-                <field name="analytic_account_id" string="Location" options="{'no_create': True}" readonly="state == 'sale'"/>
+                <field name="branch_plan_id" invisible="1"/>
+                <field name="analytic_account_id"
+                       string="Branch"
+                       domain="['|', ('company_id', '=', False), ('company_id', '=', company_id), ('plan_id', '=?', branch_plan_id)]"
+                       options="{'no_create': True}"
+                       readonly="state == 'sale'"/>
                 <field name="warehouse_id"
-                       domain="[('analytic_account_id', '=', analytic_account_id)] if analytic_account_id else []"
+                       domain="[('company_id', '=', company_id), ('analytic_account_id', '=', analytic_account_id)] if analytic_account_id else [('id', '=', False)]"
                        options="{'no_create': True}"
                        force_save="1"
-                       readonly="state == 'sale'"/>
+                       readonly="not analytic_account_id or state == 'sale'"/>
                 <field name="apply_order_discount"
                        string="Order Discount"
                        readonly="state in ('sale', 'done', 'cancel')"/>
@@ -93,10 +102,7 @@
                            readonly="state in ('sale', 'done', 'cancel')"/>
                     <span class="fw-bold ms-1">%</span>
                 </div>
-                <field name="apply_withholding_tax"
-                       string="Withholding Tax"
-                       widget="boolean_toggle"
-                       readonly="state in ('sale', 'done', 'cancel')"/>
+                <field name="apply_withholding_tax" invisible="1"/>
             </xpath>
 
             <!-- Order Discount display in Totals summary box (Option B) -->
@@ -108,13 +114,6 @@
             <!-- Product Image and Part Number Columns in Order Lines List View -->
             <xpath expr="//field[@name='order_line']/list//field[@name='product_template_id']" position="before">
                 <field name="image_1920" string="Image" widget="image" options="{'zoom': true, 'preview_image': 'image_128', 'size': [40, 40]}" width="45" optional="show" readonly="1"/>
-            </xpath>
-
-            <!-- Place Payment Proof and Payment Note right after Payment Terms -->
-            <xpath expr="//field[@name='payment_term_id']" position="after">
-                <field name="payment_proof_filename" invisible="1"/>
-                <field name="payment_proof" widget="image" filename="payment_proof_filename" options="{'size': [110, 110]}"/>
-                <field name="payment_note" placeholder="Txn ID, Bank Ref, Telebirr / CBE confirmation..."/>
             </xpath>
 
             <!-- Hide duplicate Warehouse field in Delivery/Shipping section -->
@@ -144,6 +143,7 @@
                        decoration-success="sale_type == 'cash'"
                        decoration-info="sale_type == 'credit'"
                        optional="show"/>
+                <field name="analytic_account_id" string="Branch" optional="show"/>
             </xpath>
         </field>
     </record>
@@ -160,6 +160,7 @@
                        decoration-success="sale_type == 'cash'"
                        decoration-info="sale_type == 'credit'"
                        optional="show"/>
+                <field name="analytic_account_id" string="Branch" optional="show"/>
             </xpath>
         </field>
     </record>
@@ -180,6 +181,7 @@
             </xpath>
             <xpath expr="//group" position="inside">
                 <filter string="Sale Type" name="groupby_sale_type" domain="[]" context="{'group_by': 'sale_type'}"/>
+                <filter string="Branch" name="groupby_branch" domain="[]" context="{'group_by': 'analytic_account_id'}"/>
             </xpath>
         </field>
     </record>
