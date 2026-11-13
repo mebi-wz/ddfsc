@@ -55,14 +55,38 @@ class StockPicking(models.Model):
     def action_view_ddfsc_quality_lots(self):
         self.ensure_one()
         lots = self.ddfsc_quality_lot_ids
+        inspection_action = self._ddfsc_quality_inspection_action(lots)
+        if inspection_action:
+            return inspection_action
         action = self.env.ref('ddfsc_manufacturing.action_ddfsc_qc_lots').read()[0]
         action['domain'] = [('id', 'in', lots.ids)]
         if len(lots) == 1:
             action.update(view_mode='form', views=[(False, 'form')], res_id=lots.id)
         return action
 
+    def _ddfsc_quality_inspection_action(self, lots):
+        if not lots or 'ddfsc.qc.inspection' not in self.env.registry.models:
+            return False
+        ensure = getattr(lots, '_ensure_qc_inspection', False)
+        if ensure:
+            ensure()
+        inspections = lots.mapped('active_qc_inspection_id').exists()
+        if not inspections:
+            return False
+        action = self.env.ref('ddfsc_quality.action_qc_inspection_document', raise_if_not_found=False)
+        if not action:
+            return False
+        values = action.read()[0]
+        values['domain'] = [('id', 'in', inspections.ids)]
+        if len(inspections) == 1:
+            values.update(view_mode='form', views=[(False, 'form')], res_id=inspections.id)
+        return values
+
     def _ddfsc_quality_redirect(self, lots, message):
-        action = self.env.ref('ddfsc_manufacturing.action_ddfsc_qc_lots')
+        action = self.env.ref(
+            'ddfsc_quality.action_qc_inspection_document',
+            raise_if_not_found=False,
+        ) or self.env.ref('ddfsc_manufacturing.action_ddfsc_qc_lots')
         raise RedirectWarning(
             message, action.id, _('Open QC Lot'),
             {'active_ids': lots.ids, 'ddfsc_qc_lot_ids': lots.ids},
@@ -72,12 +96,44 @@ class StockPicking(models.Model):
         self.ensure_one()
         return ''
 
+    def _ddfsc_assign_incoming_lots(self):
+        """Create a traceable batch for each unassigned incoming lot line.
+
+        Receiving staff should not be blocked by Odoo's technical lot prompt.
+        A supplier batch can still be entered manually before validation; this
+        fallback is used only where no lot was supplied.  Serial-tracked
+        products are deliberately excluded because every unit needs its own
+        serial number.
+        """
+        Lot = self.env['stock.lot']
+        for picking in self.filtered(lambda record: record.picking_type_code == 'incoming'):
+            lines = picking.move_line_ids.filtered(
+                lambda line: line.product_id.tracking == 'lot' and not line.lot_id
+            ).sorted(lambda line: (line.product_id.id, line.id))
+            for position, line in enumerate(lines, start=1):
+                # Picking names are unique, so this name is safe to retry if a
+                # later validation rule blocks the receipt.
+                name = 'REC-%s-%02d' % (picking.name.replace('/', '-'), position)
+                lot = Lot.search([
+                    ('name', '=', name),
+                    ('product_id', '=', line.product_id.id),
+                    ('company_id', '=', picking.company_id.id),
+                ], limit=1)
+                if not lot:
+                    lot = Lot.create({
+                        'name': name,
+                        'product_id': line.product_id.id,
+                        'company_id': picking.company_id.id,
+                    })
+                line.lot_id = lot
+
     @api.depends('ddfsc_document_type', 'ddfsc_store_request_id')
     def _compute_ddfsc_needs_approval(self):
         super()._compute_ddfsc_needs_approval()
 
     def button_validate(self):
         self._ddfsc_ensure_approved()
+        self._ddfsc_assign_incoming_lots()
         for picking in self:
             if picking.picking_type_code == 'incoming':
                 continue

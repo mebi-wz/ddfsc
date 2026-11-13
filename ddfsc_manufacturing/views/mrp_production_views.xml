@@ -5,6 +5,13 @@
         <field name="model">mrp.production</field>
         <field name="inherit_id" ref="mrp.mrp_production_form_view"/>
         <field name="arch" type="xml">
+            <xpath expr="//header/field[@name='state']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//header/field[@name='state']" position="after">
+                <field name="ddfsc_workflow_state" widget="statusbar" readonly="1"
+                       statusbar_visible="draft,confirmed,waiting_approval,approved,done,needs_changes,cancel"/>
+            </xpath>
             <xpath expr="//field[@name='product_id']" position="before">
                 <field name="allowed_output_ids" invisible="1"/>
                 <field name="allowed_component_ids" invisible="1"/>
@@ -36,11 +43,16 @@
                 <attribute name="optional">show</attribute>
             </xpath>
             <xpath expr="//header" position="inside">
+                <field name="ddfsc_fg_request_state" invisible="1"/>
                 <button name="action_view_ddfsc_quality_lots" type="object" string="Open QC"
                         invisible="state != 'done' or ddfsc_quality_lot_count == 0"/>
                 <button name="action_request_ingredients" type="object" string="Request Ingredients" invisible="state in ('done', 'cancel') or not bom_id"/>
-                <button name="action_request_finished_goods" type="object" string="Release to Flour Store" class="btn-primary" invisible="state != 'done' or ddfsc_line_code != 'MILL'"/>
-                <button name="action_request_finished_goods" type="object" string="Send to Finished Goods" class="btn-primary" invisible="state != 'done' or ddfsc_line_code == 'MILL'"/>
+                <button name="action_request_finished_goods" type="object" string="Release to Flour Store" class="btn-primary"
+                        invisible="state != 'done' or ddfsc_line_code != 'MILL' or ddfsc_fg_request_state"/>
+                <button name="action_request_finished_goods" type="object" string="Send to Finished Goods" class="btn-primary"
+                        invisible="state != 'done' or ddfsc_line_code == 'MILL' or ddfsc_fg_request_state"/>
+                <button name="action_view_finished_goods_transfer" type="object" string="View Finished Goods Transfer"
+                        invisible="state != 'done' or not ddfsc_fg_request_state"/>
                 <button name="action_ddfsc_submit" type="object" string="Submit for Approval" class="btn-primary"
                         invisible="ddfsc_approval_state not in ('draft', 'refused')"/>
                 <button name="action_ddfsc_approve" type="object" string="Approve" class="btn-primary"
@@ -51,7 +63,6 @@
                         invisible="ddfsc_approval_state != 'submitted'"/>
                 <button name="action_ddfsc_reset" type="object" string="Reset to Draft"
                         invisible="ddfsc_approval_state != 'refused'"/>
-                <field name="ddfsc_approval_state" widget="statusbar" statusbar_visible="draft,submitted,approved"/>
             </xpath>
             <xpath expr="//div[@name='button_box']" position="inside">
                 <button name="action_view_ddfsc_pickings" type="object" class="oe_stat_button" icon="fa-truck">
@@ -107,8 +118,10 @@
                             <field name="ddfsc_maintenance_request_id" readonly="1"/>
                             <button name="action_log_downtime" type="object" string="Log maintenance"
                                     invisible="downtime_reason not in ('mixer', 'die', 'oven', 'packing')"/>
-                            <field name="scrap_qty"/>
-                            <field name="sweeping_qty"/>
+                            <field name="scrap_qty" string="Saleable Breakage / By-product"
+                                   help="Measured production breakage that is safe and approved for sale. It is posted to this department's By-products Temp location when production is completed."/>
+                            <field name="sweeping_qty" string="Non-saleable Sweepings / Waste"
+                                   help="Floor sweepings or contaminated waste. This is sent to Scrap and is never made saleable automatically."/>
                             <field name="bread_scrap_low" invisible="ddfsc_line_code != 'BREAD'"/>
                             <field name="bread_scrap_high" invisible="ddfsc_line_code != 'BREAD'"/>
                         </group>

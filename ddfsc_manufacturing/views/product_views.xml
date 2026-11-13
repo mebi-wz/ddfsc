@@ -14,6 +14,9 @@
                     <field name="ddfsc_is_byproduct"/>
                     <label for="ddfsc_is_byproduct"/>
                 </span>
+                <span class="d-inline-flex" invisible="not ddfsc_is_byproduct">
+                    <field name="ddfsc_byproduct_department"/>
+                </span>
             </xpath>
         </field>
     </record>

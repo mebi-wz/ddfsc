@@ -27,6 +27,18 @@ def recipes(env, products):
         '|', ('company_id', '=', False), ('company_id', '=', env.company.id),
     ])
 
+
+def byproducts(env, department):
+    """Saleable by-products explicitly owned by a department.
+
+    Do not expose every product on a transfer request: that would let a
+    department accidentally move another department's product to the store.
+    """
+    return env['product.product'].search([
+        ('product_tmpl_id.ddfsc_is_byproduct', '=', True),
+        ('product_tmpl_id.ddfsc_byproduct_department', '=', department),
+    ])
+
 class StoreRequest(models.Model):
     _inherit = 'ddfsc.store.request'
 
@@ -64,7 +76,7 @@ class StoreRequest(models.Model):
             if request.request_type == 'component':
                 products = boms.bom_line_ids.product_id
             elif request.request_type == 'byproduct_return':
-                products = boms.byproduct_ids.product_id if request.ddfsc_department == 'flour' else self.env['product.product']
+                products = byproducts(self.env, request.ddfsc_department)
             request.allowed_product_ids = products
 
     def _check_department_products(self):
@@ -98,6 +110,33 @@ class Production(models.Model):
     allowed_output_ids = fields.Many2many('product.product', compute='_compute_allowed_outputs')
     allowed_component_ids = fields.Many2many('product.product', compute='_compute_allowed_components')
     department_line_ids = fields.Many2many('mrp.workcenter', compute='_compute_department_lines')
+    ddfsc_fg_request_id = fields.Many2one(
+        'ddfsc.store.request',
+        string='Finished Goods Transfer',
+        compute='_compute_ddfsc_fg_request',
+    )
+    ddfsc_fg_request_state = fields.Selection(
+        [
+            ('draft', 'Draft'),
+            ('store_manager', 'Store Manager'),
+            ('requested', 'Requested'),
+            ('received', 'Received'),
+            ('cancel', 'Cancelled'),
+        ],
+        string='Finished Goods Transfer Status',
+        compute='_compute_ddfsc_fg_request',
+    )
+
+    def _compute_ddfsc_fg_request(self):
+        Request = self.env['ddfsc.store.request']
+        for production in self:
+            request = Request.search([
+                ('production_id', '=', production.id),
+                ('request_type', '=', 'finished_goods'),
+                ('state', '!=', 'cancel'),
+            ], order='id desc', limit=1)
+            production.ddfsc_fg_request_id = request
+            production.ddfsc_fg_request_state = request.state or False
 
     @api.depends_context('ddfsc_department')
     @api.depends('ddfsc_line_id')
@@ -114,7 +153,12 @@ class Production(models.Model):
                 lambda lot: lot.ddfsc_quality_state not in ('pass', 'released')
             )
             if blocked:
-                action = self.env.ref('ddfsc_manufacturing.action_ddfsc_qc_lots')
+                # Ensure the standalone QC document is ready before sending
+                # the operator to it from the warning dialog.
+                ensure = getattr(blocked, '_ensure_qc_inspection', False)
+                if ensure:
+                    ensure()
+                action = self._ddfsc_quality_redirect_action()
                 raise RedirectWarning(
                     _('Quality control is required for lot(s) %s before this transfer can be created.')
                     % ', '.join(blocked.mapped('name')),
@@ -155,6 +199,18 @@ class Production(models.Model):
 
     def action_request_finished_goods(self):
         return self._action_department_request('finished_goods')
+
+    def action_view_finished_goods_transfer(self):
+        self.ensure_one()
+        if not self.ddfsc_fg_request_id:
+            raise ValidationError(_('No Finished Goods transfer has been created for this production order yet.'))
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Finished Goods Transfer'),
+            'res_model': 'ddfsc.store.request',
+            'view_mode': 'form',
+            'res_id': self.ddfsc_fg_request_id.id,
+        }
 
     @api.depends('bom_id', 'bom_id.bom_line_ids.product_id')
     def _compute_allowed_components(self):
